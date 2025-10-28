@@ -177,10 +177,8 @@ const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notification
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
-            <button onClick={() => onNavigate('main')} className="flex items-center text-3xl font-extrabold tracking-tighter select-none" aria-label="Go to homepage">
-              <span>Un</span>
-              <span className="text-unistay-yellow -mx-1"><HouseIcon /></span>
-              <span>Stay</span>
+            <button onClick={() => onNavigate('main')} className="flex items-center select-none" aria-label="Go to homepage">
+              <img src="/images/hostels/unistay.png" alt="UniStay Logo" className="h-10" />
             </button>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
