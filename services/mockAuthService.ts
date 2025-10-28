@@ -2,11 +2,18 @@ import { User } from '../types';
 
 // Mock user database
 const MOCK_USERS = {
-    'admin@unistay.com': {
+    'victorbaguma34@gmail.com': {
         id: 'admin-user-id',
         name: 'Admin User',
         email: 'admin@unistay.com',
-        password: 'password123',
+        password: '10948@Bagzy',
+        isAdmin: true,
+    },
+    'victorbaguma339@gmail.com': {
+        id: 'victor-admin-id',
+        name: 'Victor Baguma',
+        email: 'victorbaguma34@gmail.com',
+        password: '10948@Bagzy',
         isAdmin: true,
     },
     'sarah@unistay.com': {
