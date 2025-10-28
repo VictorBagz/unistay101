@@ -73,15 +73,8 @@ const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth
             <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                     <div className="col-span-2 md:col-span-4 lg:col-span-1">
-                        <div className="flex items-center text-3xl font-extrabold tracking-tighter select-none">
-                            <span>Un</span>
-                            <span className="text-unistay-yellow -mx-1">
-                                <svg aria-hidden="true" className="inline-block" width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" style={{ transform: 'translateY(-0.05em)'}}>
-                                    <path d="M12 7.5l-7 6h2v7.5h10v-7.5h2l-7-6z" />
-                                    <circle cx="12" cy="4" r="2" />
-                                </svg>
-                            </span>
-                            <span>Stay</span>
+                        <div className="flex items-center select-none">
+                            <img src="/images/hostels/unistay.png" alt="UniStay Logo" className="h-10" />
                         </div>
                         <p className="mt-4 text-gray-300 text-sm">Your partner in finding the perfect student accommodation.</p>
                     </div>

@@ -20,7 +20,7 @@ const Hero = () => {
     <section 
       ref={heroRef}
       className="relative bg-cover bg-center h-[60vh] min-h-[400px] flex items-center justify-center" 
-      style={{ backgroundImage: `url('https://picsum.photos/seed/hero-bg/1600/900')` }}
+      style={{ backgroundImage: `url('/images/hostels/akamweesi3.jpg')` }}
     >
       <div className="absolute inset-0 bg-unistay-navy bg-opacity-60"></div>
       <div className={`relative z-10 text-center text-white px-4 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>

@@ -3,16 +3,17 @@
 import { University, Service, Hostel, NewsItem, Event, Job, RoommateProfile } from './types';
 
 export const UNIVERSITIES: University[] = [
-  { id: 'makerere', name: 'Makerere', logoUrl: 'https://picsum.photos/seed/makerere/40/40' },
-  { id: 'kyambogo', name: 'Kyambogo', logoUrl: 'https://picsum.photos/seed/kyambogo/40/40' },
-  { id: 'mubs', name: 'MUBS', logoUrl: 'https://picsum.photos/seed/mubs/40/40' },
-  { id: 'must', name: 'MUST', logoUrl: 'https://picsum.photos/seed/must/40/40' },
-  { id: 'ucu', name: 'UCU', logoUrl: 'https://picsum.photos/seed/ucu/40/40' },
-  { id: 'kiu', name: 'KIU', logoUrl: 'https://picsum.photos/seed/kiu/40/40' },
-  { id: 'ndejje', name: 'Ndejje', logoUrl: 'https://picsum.photos/seed/ndejje/40/40' },
-  { id: 'umu', name: 'UMU Nkozi', logoUrl: 'https://picsum.photos/seed/umu/40/40' },
-  { id: 'gulu', name: 'Gulu', logoUrl: 'https://picsum.photos/seed/gulu/40/40' },
-  { id: 'lira', name: 'Lira', logoUrl: 'https://picsum.photos/seed/lira/40/40' },
+  { id: 'makerere', name: 'Makerere', logoUrl: '/images/hostels/makerere.jpg' },
+  { id: 'kyambogo', name: 'Kyambogo', logoUrl: '/images/hostels/kyambogo.jpg' },
+  { id: 'mubs', name: 'MUBS', logoUrl: '/images/hostels/mubs.jpg' },
+  { id: 'must', name: 'MUST', logoUrl: '/images/hostels/must.jpg' },
+  { id: 'ucu', name: 'UCU', logoUrl: '/images/hostels/ucu.png' },
+  { id: 'kiu', name: 'KIU', logoUrl: '/images/hostels/kiu.jpg' },
+  { id: 'ndejje', name: 'Ndejje', logoUrl: '/images/hostels/ndejje.jpg' },
+  { id: 'umu', name: 'UMU Nkozi', logoUrl: '/images/hostels/umu.png' },
+  { id: 'gulu', name: 'Gulu', logoUrl: '/images/hostels/gulu.png' },
+  { id: 'agaKhan', name: 'Aga Khan', logoUrl: '/images/hostels/agaKhan.jpg' },
+  { id: 'lira', name: 'Lira', logoUrl: '/images/hostels/lira.png' },
 ];
 
 export const SERVICES: Service[] = [
