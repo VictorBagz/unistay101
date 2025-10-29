@@ -433,8 +433,20 @@ interface HostelFormProps {
 }
 
 const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, universities, isSubmitting }) => {
+    // Ensure we always have a valid UUID for universityId
+    const defaultUniversity = universities.find(u => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id));
+    const defaultUniversityId = defaultUniversity?.id || '123e4567-e89b-12d3-a456-426614174001';
+
     const [formData, setFormData] = useState(item || {
-        name: '', location: '', priceRange: '', images: [], rating: 4.0, universityId: universities[0].id, description: '', amenities: [], isRecommended: false
+        name: '', 
+        location: '', 
+        priceRange: '', 
+        images: [], 
+        rating: 4.0, 
+        universityId: defaultUniversityId, // Use the validated UUID
+        description: '', 
+        amenities: [], 
+        isRecommended: false
     });
     
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

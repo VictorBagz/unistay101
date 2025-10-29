@@ -3,17 +3,17 @@
 import { University, Service, Hostel, NewsItem, Event, Job, RoommateProfile } from './types';
 
 export const UNIVERSITIES: University[] = [
-  { id: 'makerere', name: 'Makerere', logoUrl: '/images/hostels/makerere.jpg' },
-  { id: 'kyambogo', name: 'Kyambogo', logoUrl: '/images/hostels/kyambogo.jpg' },
-  { id: 'mubs', name: 'MUBS', logoUrl: '/images/hostels/mubs.jpg' },
-  { id: 'must', name: 'MUST', logoUrl: '/images/hostels/must.jpg' },
-  { id: 'ucu', name: 'UCU', logoUrl: '/images/hostels/ucu.png' },
-  { id: 'kiu', name: 'KIU', logoUrl: '/images/hostels/kiu.jpg' },
-  { id: 'ndejje', name: 'Ndejje', logoUrl: '/images/hostels/ndejje.jpg' },
-  { id: 'umu', name: 'UMU Nkozi', logoUrl: '/images/hostels/umu.png' },
-  { id: 'gulu', name: 'Gulu', logoUrl: '/images/hostels/gulu.png' },
-  { id: 'agaKhan', name: 'Aga Khan', logoUrl: '/images/hostels/agaKhan.jpg' },
-  { id: 'lira', name: 'Lira', logoUrl: '/images/hostels/lira.png' },
+  { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Makerere', logoUrl: '/images/hostels/makerere.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174002', name: 'Kyambogo', logoUrl: '/images/hostels/kyambogo.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174003', name: 'MUBS', logoUrl: '/images/hostels/mubs.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174004', name: 'MUST', logoUrl: '/images/hostels/must.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174005', name: 'UCU', logoUrl: '/images/hostels/ucu.png' },
+  { id: '123e4567-e89b-12d3-a456-426614174006', name: 'KIU', logoUrl: '/images/hostels/kiu.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174007', name: 'Ndejje', logoUrl: '/images/hostels/ndejje.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174008', name: 'UMU Nkozi', logoUrl: '/images/hostels/umu.png' },
+  { id: '123e4567-e89b-12d3-a456-426614174009', name: 'Gulu', logoUrl: '/images/hostels/gulu.png' },
+  { id: '123e4567-e89b-12d3-a456-426614174010', name: 'Aga Khan', logoUrl: '/images/hostels/agaKhan.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174011', name: 'Lira', logoUrl: '/images/hostels/lira.png' },
 ];
 
 export const SERVICES: Service[] = [
@@ -55,7 +55,7 @@ export const HOSTELS: Hostel[] = [
         priceRange: '1.2M - 1.8M',
         imageUrl: 'https://picsum.photos/seed/olympia/400/300',
         rating: 4.5,
-        universityId: 'makerere',
+        universityId: '123e4567-e89b-12d3-a456-426614174001', // Makerere
         description: 'A premium hostel with modern facilities, including a swimming pool and gym. Known for its vibrant community and excellent security.',
         amenities: [
             { name: 'WiFi', icon: 'fas fa-wifi' },
@@ -74,7 +74,7 @@ export const HOSTELS: Hostel[] = [
         priceRange: '800K - 1.4M',
         imageUrl: 'https://picsum.photos/seed/nana/400/300',
         rating: 4.2,
-        universityId: 'makerere',
+        universityId: '123e4567-e89b-12d3-a456-426614174001', // Makerere
         description: 'A popular choice for students seeking a balance of comfort and affordability. Close to the western gate.',
         amenities: [
             { name: 'WiFi', icon: 'fas fa-wifi' },
@@ -91,7 +91,7 @@ export const HOSTELS: Hostel[] = [
         priceRange: '600K - 1M',
         imageUrl: 'https://picsum.photos/seed/bavos/400/300',
         rating: 3.9,
-        universityId: 'kyambogo',
+        universityId: '123e4567-e89b-12d3-a456-426614174002', // Kyambogo
         description: 'Offers spacious rooms and a quiet environment conducive for studying. Located along the main road for easy access.',
         amenities: [
             { name: 'WiFi', icon: 'fas fa-wifi' },
@@ -107,7 +107,7 @@ export const HOSTELS: Hostel[] = [
         priceRange: '900K - 1.5M',
         imageUrl: 'https://picsum.photos/seed/akamwesi/400/300',
         rating: 4.3,
-        universityId: 'mubs',
+        universityId: '123e4567-e89b-12d3-a456-426614174003', // MUBS
         description: 'Famous for its social life and proximity to campus. Features a restaurant and a rooftop terrace.',
         amenities: [
             { name: 'WiFi', icon: 'fas fa-wifi' },
@@ -214,7 +214,7 @@ export const ROOMMATE_PROFILES: RoommateProfile[] = [
         imageUrl: 'https://picsum.photos/seed/sarah/400/400',
         age: 21,
         gender: 'Female',
-        universityId: 'makerere',
+        universityId: '123e4567-e89b-12d3-a456-426614174001', // Makerere
         course: 'Law',
         yearOfStudy: 3,
         budget: 900000,
@@ -238,7 +238,7 @@ export const ROOMMATE_PROFILES: RoommateProfile[] = [
         imageUrl: 'https://picsum.photos/seed/john/400/400',
         age: 20,
         gender: 'Male',
-        universityId: 'kyambogo',
+        universityId: '123e4567-e89b-12d3-a456-426614174002', // Kyambogo
         course: 'Civil Engineering',
         yearOfStudy: 2,
         budget: 700000,
@@ -262,7 +262,7 @@ export const ROOMMATE_PROFILES: RoommateProfile[] = [
         imageUrl: 'https://picsum.photos/seed/brenda/400/400',
         age: 22,
         gender: 'Female',
-        universityId: 'mubs',
+        universityId: '123e4567-e89b-12d3-a456-426614174003', // MUBS
         course: 'Business Administration',
         yearOfStudy: 4,
         budget: 1200000,

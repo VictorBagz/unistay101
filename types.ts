@@ -3,13 +3,13 @@
 
 
 export interface University {
-  id: string;
+  id: string; // UUID format: 123e4567-e89b-12d3-a456-426614174000
   name: string;
   logoUrl: string;
 }
 
 export interface Hostel {
-  id: string; // Changed from number to string for Firestore document IDs
+  id: string;
   name: string;
   location: string;
   priceRange: string;
@@ -93,7 +93,7 @@ export interface RoommateProfile {
 
 
 export interface User {
-  id: string; // Firebase UID
+  id: string; // Supabase UID
   name: string | null;
   email: string | null;
 }
