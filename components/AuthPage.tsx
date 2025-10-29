@@ -139,11 +139,21 @@ const AuthPage = ({ onAuthSuccess, onNavigateHome }: AuthPageProps) => {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-            <button onClick={onNavigateHome} className="flex items-center justify-center text-unistay-navy text-4xl font-extrabold tracking-tighter select-none w-full" aria-label="Go to homepage">
-              <span>Un</span>
-              <span className="text-unistay-yellow -mx-1"><HouseIcon /></span>
-              <span>Stay</span>
-            </button>
+            <a 
+              href="/" 
+              onClick={(e) => { 
+                e.preventDefault(); 
+                onNavigateHome(); 
+              }} 
+              className="inline-block hover:opacity-90 transition-opacity" 
+              aria-label="Go to homepage"
+            >
+              <img 
+                src="/images/hostels/unistay.png" 
+                alt="UniStay Logo" 
+                className="h-12 w-auto rounded-lg shadow-sm"
+              />
+            </a>
             <p className="text-gray-600 mt-2">Your partner in finding the perfect student accommodation.</p>
         </div>
 

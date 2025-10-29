@@ -4,6 +4,11 @@ import Spinner from './Spinner';
 import { hostelService, newsService, eventService, jobService, roommateProfileService } from '../services/dbService';
 import { useNotifier } from '../hooks/useNotifier';
 
+interface UploadedImage {
+    file: File;
+    previewUrl: string;
+}
+
 // --- Helper Components ---
 // FIX: Add explicit types to helper components to prevent type inference issues.
 const Input = (props: React.ComponentPropsWithoutRef<'input'>) => <input {...props} className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-unistay-yellow focus:border-unistay-yellow" />;
@@ -78,19 +83,109 @@ const DashboardStats = ({ stats, isLoading }) => {
 
 // --- Form Components ---
 
-const NewsForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
-    const [formData, setFormData] = useState(item || { title: '', description: '', imageUrl: '', source: '' });
-    const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
-    const handleSubmit = e => {
+interface NewsFormData {
+    title: string;
+    description: string;
+    source: string;
+    images: UploadedImage[];
+}
+
+interface NewsFormProps {
+    item?: NewsFormData;
+    onSubmit: (data: NewsFormData & { imageUrl: string }) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+}
+
+const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
+    const [formData, setFormData] = useState<NewsFormData>(item || { 
+        title: '', 
+        description: '', 
+        source: '', 
+        images: [] 
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        // Convert FileList to array and process each file
+        Array.from(files).forEach((file: File) => {
+            // Create a local URL for preview
+            const imageUrl = URL.createObjectURL(file);
+            setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, { file, previewUrl: imageUrl }]
+            }));
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        
+        if (formData.images.length === 0) {
+            alert('Please upload at least one image');
+            return;
+        }
+
+        // Use the first image as the primary image
+        onSubmit({
+            ...formData,
+            imageUrl: formData.images[0].previewUrl
+        });
     };
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
             <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required />
-            <Input name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
+            
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+                <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full"
+                    required={formData.images.length === 0}
+                />
+                
+                {/* Image Preview Grid */}
+                {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {formData.images.map((img, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={img.previewUrl}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <i className="fas fa-times" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <Input name="source" value={formData.source} onChange={handleChange} placeholder="Source" required />
+            
             <div className="flex gap-2 justify-end">
                 <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
                 <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Add'} News</Button>
@@ -99,23 +194,67 @@ const NewsForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
     );
 };
 
-const EventForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
-    const toInputDate = (dateStr) => dateStr ? new Date(dateStr).toISOString().split('T')[0] : '';
-    const [formData, setFormData] = useState({
-        ...item,
-        dateInput: toInputDate(item?.date)
-    } || { title: '', dateInput: '', location: '', imageUrl: '' });
+interface EventFormData {
+    title: string;
+    dateInput: string;
+    location: string;
+    images: UploadedImage[];
+}
 
-    const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+interface EventFormProps {
+    item?: EventFormData;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+}
 
-    const handleSubmit = e => {
+const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
+    const toInputDate = (dateStr: string) => dateStr ? new Date(dateStr).toISOString().split('T')[0] : '';
+    const [formData, setFormData] = useState<EventFormData>({
+        title: item?.title || '',
+        dateInput: item ? toInputDate(item.date) : '',
+        location: item?.location || '',
+        images: []
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        Array.from(files).forEach((file: File) => {
+            const imageUrl = URL.createObjectURL(file);
+            setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, { file, previewUrl: imageUrl }]
+            }));
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const eventDate = new Date(`${formData.dateInput}T12:00:00`); // Avoid timezone issues
+        if (formData.images.length === 0) {
+            alert('Please upload at least one image');
+            return;
+        }
+
+        const eventDate = new Date(`${formData.dateInput}T12:00:00`);
         const processedEvent = {
             ...formData,
             date: eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
             day: eventDate.toLocaleDateString('en-US', { day: '2-digit' }),
             month: eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+            imageUrl: formData.images[0].previewUrl // Use first image as primary
         };
         delete processedEvent.dateInput;
         onSubmit(processedEvent);
@@ -126,7 +265,40 @@ const EventForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
             <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
             <Input name="dateInput" type="date" value={formData.dateInput} onChange={handleChange} required />
             <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" required />
-            <Input name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
+            
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+                <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full"
+                    required={formData.images.length === 0}
+                />
+                
+                {/* Image Preview Grid */}
+                {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {formData.images.map((img, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={img.previewUrl}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <i className="fas fa-times" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div className="flex gap-2 justify-end">
                 <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
                 <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Add'} Event</Button>
@@ -135,19 +307,103 @@ const EventForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
     );
 };
 
-const JobForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
-    const [formData, setFormData] = useState(item || { title: '', deadline: '', company: '', imageUrl: '' });
-    const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
-    const handleSubmit = e => {
+interface JobFormData {
+    title: string;
+    deadline: string;
+    company: string;
+    images: UploadedImage[];
+}
+
+interface JobFormProps {
+    item?: JobFormData;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+}
+
+const JobForm: React.FC<JobFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
+    const [formData, setFormData] = useState<JobFormData>({
+        title: item?.title || '',
+        deadline: item?.deadline || '',
+        company: item?.company || '',
+        images: []
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        Array.from(files).forEach((file: File) => {
+            const imageUrl = URL.createObjectURL(file);
+            setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, { file, previewUrl: imageUrl }]
+            }));
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        if (formData.images.length === 0) {
+            alert('Please upload at least one image');
+            return;
+        }
+
+        onSubmit({
+            ...formData,
+            imageUrl: formData.images[0].previewUrl // Use first image as primary
+        });
     };
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
             <Input name="deadline" value={formData.deadline} onChange={handleChange} placeholder="Deadline (e.g., July 15th)" required />
             <Input name="company" value={formData.company} onChange={handleChange} placeholder="Company" required />
-            <Input name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
+            
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+                <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full"
+                    required={formData.images.length === 0}
+                />
+                
+                {/* Image Preview Grid */}
+                {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {formData.images.map((img, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={img.previewUrl}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <i className="fas fa-times" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div className="flex gap-2 justify-end">
                 <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
                 <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Add'} Job</Button>
@@ -156,41 +412,130 @@ const JobForm = ({ item, onSubmit, onCancel, isSubmitting }) => {
     );
 };
 
-const HostelForm = ({ item, onSubmit, onCancel, universities, isSubmitting }) => {
-    const [formData, setFormData] = useState(item || {
-        name: '', location: '', priceRange: '', imageUrl: '', rating: 4.0, universityId: universities[0].id, description: '', amenities: [], isRecommended: false
-    });
+interface HostelFormData {
+    name: string;
+    location: string;
+    priceRange: string;
+    images: UploadedImage[];
+    rating: number;
+    universityId: string;
+    description: string;
+    amenities: Array<{ name: string; icon: string }>;
+    isRecommended: boolean;
+}
 
-    const handleChange = e => {
-        const { name, value, type, checked } = e.target;
-        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+interface HostelFormProps {
+    item?: HostelFormData;
+    onSubmit: (data: HostelFormData & { imageUrl: string; imageUrls: string[] }) => void;
+    onCancel: () => void;
+    universities: Array<{ id: string; name: string }>;
+    isSubmitting: boolean;
+}
+
+const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, universities, isSubmitting }) => {
+    const [formData, setFormData] = useState(item || {
+        name: '', location: '', priceRange: '', images: [], rating: 4.0, universityId: universities[0].id, description: '', amenities: [], isRecommended: false
+    });
+    
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        // Convert FileList to array and process each file
+        Array.from(files).forEach((file: File) => {
+            // Create a local URL for preview
+            const imageUrl = URL.createObjectURL(file);
+            setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, { file, previewUrl: imageUrl } as UploadedImage]
+            }));
+        });
     };
 
-    const handleAmenityChange = (index, field, value) => {
+    const removeImage = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    };
+
+    const handleAmenityChange = (index: number, field: 'name' | 'icon', value: string) => {
         const newAmenities = [...formData.amenities];
         newAmenities[index][field] = value;
-        setFormData({ ...formData, amenities: newAmenities });
+        setFormData(prev => ({ ...prev, amenities: newAmenities }));
     };
 
     const addAmenity = () => {
-        setFormData({ ...formData, amenities: [...formData.amenities, { name: '', icon: 'fas fa-check' }] });
+        setFormData(prev => ({ ...prev, amenities: [...prev.amenities, { name: '', icon: 'fas fa-check' }] }));
     };
 
-    const removeAmenity = index => {
+    const removeAmenity = (index: number) => {
         const newAmenities = formData.amenities.filter((_, i) => i !== index);
-        setFormData({ ...formData, amenities: newAmenities });
+        setFormData(prev => ({ ...prev, amenities: newAmenities }));
     };
 
-    const handleSubmit = e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit({ ...formData, rating: parseFloat(formData.rating) });
+        
+        if (formData.images.length === 0) {
+            alert('Please upload at least one image');
+            return;
+        }
+        
+        // Get all image URLs from uploads
+        const imageUrls = formData.images.map(img => img.previewUrl);
+        
+        // Submit the form with uploaded images
+        onSubmit({
+            ...formData,
+            rating: parseFloat(formData.rating),
+            imageUrl: imageUrls[0], // Set first image as primary
+            imageUrls: imageUrls // All images including primary
+        });
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input name="name" value={formData.name} onChange={handleChange} placeholder="Hostel Name" required />
-                <Input name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
+                <div className="space-y-4">
+                    <Input 
+                        type="file" 
+                        multiple 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="w-full"
+                        required={formData.images.length === 0}
+                    />
+                    
+                    {/* Image Preview Grid */}
+                    {formData.images.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                            {formData.images.map((img, index) => (
+                                <div key={index} className="relative group">
+                                    <img
+                                        src={img.previewUrl}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded-lg"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(index)}
+                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <i className="fas fa-times" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
                 <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" required />
                 <Input name="priceRange" value={formData.priceRange} onChange={handleChange} placeholder="Price Range (e.g., 800K - 1.4M)" required />
                 <Input name="rating" type="number" step="0.1" min="0" max="5" value={formData.rating} onChange={handleChange} placeholder="Rating" required />
@@ -201,16 +546,85 @@ const HostelForm = ({ item, onSubmit, onCancel, universities, isSubmitting }) =>
             <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required />
             <div>
                 <h4 className="font-semibold mb-2">Amenities</h4>
-                <div className="space-y-2">
+
+                {/* Predefined amenity options with icons - user can click to toggle */}
+                {/** Define options inside the form so they can access handler functions easily */}
+                <div className="mb-3">
+                    {/* Amenity options */}
+                    {(() => {
+                        const AMENITY_OPTIONS = [
+                            { name: 'Wifi', icon: 'fas fa-wifi' },
+                            { name: 'Swimming Pool', icon: 'fas fa-water' },
+                            { name: 'Laundry', icon: 'fas fa-tshirt' },
+                            { name: 'Parking', icon: 'fas fa-parking' },
+                            { name: 'Canteen', icon: 'fa fa-shopping-bag' },
+                            { name: 'Security', icon: 'fas fa-shield-alt' },
+                            { name: 'Restaurant', icon: 'fas fa-utensils' },
+                            { name: 'Study Area', icon: 'fas fa-book' },
+                            { name: 'TV', icon: 'fas fa-tv' },
+                            { name: 'Shuttle', icon: 'fas fa-bus' },
+                            { name: 'Girls Only', icon: 'fa fa-female' },
+                            { name: 'Boys Only', icon: 'fa fa-male' },
+                            { name: 'Mixed', icon: 'fa fa-users' },
+                            { name: 'Gym', icon: 'fa fa-dumbbell' },
+                        ];
+
+                        const isSelected = (name) => formData.amenities.some(a => a.name === name);
+                        const toggleAmenityOption = (opt) => {
+                            const existsIndex = formData.amenities.findIndex(a => a.name === opt.name);
+                            if (existsIndex >= 0) {
+                                // remove
+                                const newAmenities = formData.amenities.filter((_, i) => i !== existsIndex);
+                                setFormData({ ...formData, amenities: newAmenities });
+                            } else {
+                                // add
+                                setFormData({ ...formData, amenities: [...formData.amenities, { name: opt.name, icon: opt.icon }] });
+                            }
+                        };
+
+                        return (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {AMENITY_OPTIONS.map(opt => (
+                                    <button
+                                        key={opt.name}
+                                        type="button"
+                                        onClick={() => toggleAmenityOption(opt)}
+                                        className={`flex items-center gap-3 p-2 rounded-md border transition-colors text-sm text-gray-700 ${isSelected(opt.name) ? 'bg-unistay-yellow text-unistay-navy border-unistay-yellow' : 'bg-white hover:bg-gray-50'}`}
+                                    >
+                                        <i className={`${opt.icon} w-5 text-lg`} />
+                                        <span>{opt.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        );
+                    })()}
+                </div>
+
+                {/* Custom / added amenities (show as chips with an option to remove) */}
+                <div className="flex flex-wrap gap-2 mb-2">
                     {formData.amenities.map((amenity, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <Input value={amenity.name} onChange={e => handleAmenityChange(index, 'name', e.target.value)} placeholder="Amenity Name" />
-                            <Input value={amenity.icon} onChange={e => handleAmenityChange(index, 'icon', e.target.value)} placeholder="Font Awesome Icon (e.g., fas fa-wifi)" />
-                            <ActionButton icon="fa-trash" onClick={() => removeAmenity(index)} colorClass="text-red-500 hover:text-red-700" />
+                        <div key={`${amenity.name}-${index}`} className="flex items-center gap-2 bg-white border rounded-full px-3 py-1 text-sm shadow-sm">
+                            <i className={`${amenity.icon} text-sm`} />
+                            <span className="whitespace-nowrap">{amenity.name}</span>
+                            <button type="button" onClick={() => removeAmenity(index)} className="ml-1 text-red-500 hover:text-red-700">
+                                <i className="fas fa-times" />
+                            </button>
                         </div>
                     ))}
                 </div>
-                <Button onClick={addAmenity} className="mt-2 bg-unistay-yellow text-unistay-navy hover:bg-yellow-400"><i className="fas fa-plus mr-2"></i>Add Amenity</Button>
+
+                {/* Keep a simple add custom amenity flow for edge cases */}
+                <div className="flex items-center gap-2">
+                    <Input id="customAmenityName" placeholder="Custom amenity (e.g., Rooftop)" />
+                    <Button onClick={() => {
+                        const input = (document.getElementById('customAmenityName') as HTMLInputElement);
+                        if (!input) return;
+                        const val = input.value.trim();
+                        if (!val) return;
+                        setFormData({ ...formData, amenities: [...formData.amenities, { name: val, icon: 'fas fa-check' }] });
+                        input.value = '';
+                    }} className="bg-unistay-yellow text-unistay-navy hover:bg-yellow-400"><i className="fas fa-plus mr-2"></i>Add Amenity</Button>
+                </div>
             </div>
             <div className="flex items-center">
                 <input id="isRecommended" name="isRecommended" type="checkbox" checked={formData.isRecommended} onChange={handleChange} className="h-4 w-4 text-unistay-yellow focus:ring-unistay-yellow border-gray-300 rounded" />
