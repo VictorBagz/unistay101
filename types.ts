@@ -13,7 +13,8 @@ export interface Hostel {
   name: string;
   location: string;
   priceRange: string;
-  imageUrl: string;
+  imageUrl: string; // Primary image (thumbnail)
+  imageUrls: string[]; // All hostel images including the primary image
   rating: number;
   universityId: string;
   description: string;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Hostel, NewsItem, Event, Job, University, RoommateProfile } from '../types';
 import Spinner from './Spinner';
 import { hostelService, newsService, eventService, jobService, roommateProfileService } from '../services/dbService';
+import { storageService } from '../services/storageService.ts';
 import { useNotifier } from '../hooks/useNotifier';
 
 interface UploadedImage {
@@ -84,25 +85,27 @@ const DashboardStats = ({ stats, isLoading }) => {
 // --- Form Components ---
 
 interface NewsFormData {
+    id?: string;
     title: string;
     description: string;
     source: string;
     images: UploadedImage[];
+    imageUrl?: string;
 }
 
 interface NewsFormProps {
     item?: NewsFormData;
-    onSubmit: (data: NewsFormData & { imageUrl: string }) => void;
+    onSubmit: (data: any) => void;
     onCancel: () => void;
     isSubmitting: boolean;
 }
 
 const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
-    const [formData, setFormData] = useState<NewsFormData>(item || { 
-        title: '', 
-        description: '', 
-        source: '', 
-        images: [] 
+    const [formData, setFormData] = useState<NewsFormData>({
+        title: item?.title || '',
+        description: item?.description || '',
+        source: item?.source || '',
+        images: item?.imageUrl ? [{ file: null as any, previewUrl: item.imageUrl }] : []
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -132,7 +135,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (formData.images.length === 0) {
@@ -140,11 +143,39 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
             return;
         }
 
-        // Use the first image as the primary image
-        onSubmit({
-            ...formData,
-            imageUrl: formData.images[0].previewUrl
-        });
+        try {
+            // Identify new images that need uploading
+            const newImages = formData.images.filter(img => img.file);
+            let imageUrl = item?.imageUrl;
+
+            // Only upload if we have new images
+            if (newImages.length > 0) {
+                const files = newImages.map(img => img.file);
+                const timestamp = new Date().getTime();
+                const newsFolder = `${item?.id || timestamp}`;
+                const uploadedUrls = await storageService.uploadMultipleImages(files, 'news', newsFolder);
+                imageUrl = uploadedUrls[0]; // Use the first new image
+
+                // Delete old image if we're replacing it
+                if (item?.id && item.imageUrl) {
+                    try {
+                        await storageService.deleteImage(item.imageUrl, 'news');
+                    } catch (error) {
+                        console.warn('Failed to delete old news image:', error);
+                    }
+                }
+            }
+
+            // Submit with image URL (either existing or new)
+            onSubmit({
+                ...formData,
+                imageUrl,
+                images: undefined // Remove the temporary images array
+            });
+        } catch (error) {
+            console.error('Error uploading news images:', error);
+            alert('Failed to upload images. Please try again.');
+        }
     };
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -195,10 +226,13 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
 };
 
 interface EventFormData {
+    id?: string;
     title: string;
     dateInput: string;
     location: string;
     images: UploadedImage[];
+    date?: string;
+    imageUrl?: string;
 }
 
 interface EventFormProps {
@@ -241,23 +275,44 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.images.length === 0) {
             alert('Please upload at least one image');
             return;
         }
 
-        const eventDate = new Date(`${formData.dateInput}T12:00:00`);
-        const processedEvent = {
-            ...formData,
-            date: eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-            day: eventDate.toLocaleDateString('en-US', { day: '2-digit' }),
-            month: eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
-            imageUrl: formData.images[0].previewUrl // Use first image as primary
-        };
-        delete processedEvent.dateInput;
-        onSubmit(processedEvent);
+        try {
+            // Upload images to events bucket
+            const files = formData.images.map(img => img.file);
+            const timestamp = new Date().getTime();
+            const eventFolder = `${item?.id || timestamp}`;
+            const uploadedUrls = await storageService.uploadMultipleImages(files, 'events', eventFolder);
+
+            // If updating, delete old images
+            if (item?.id && item.imageUrl) {
+                try {
+                    await storageService.deleteImage(item.imageUrl, 'events');
+                } catch (error) {
+                    console.warn('Failed to delete old event image:', error);
+                }
+            }
+
+            const eventDate = new Date(`${formData.dateInput}T12:00:00`);
+            const processedEvent = {
+                ...formData,
+                date: eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                day: eventDate.toLocaleDateString('en-US', { day: '2-digit' }),
+                month: eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+                imageUrl: uploadedUrls[0], // Use first uploaded image as primary
+                images: undefined // Remove the temporary images array
+            };
+            delete processedEvent.dateInput;
+            onSubmit(processedEvent);
+        } catch (error) {
+            console.error('Error uploading event images:', error);
+            alert('Failed to upload images. Please try again.');
+        }
     };
 
     return (
@@ -308,10 +363,12 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
 };
 
 interface JobFormData {
+    id?: string;
     title: string;
     deadline: string;
     company: string;
     images: UploadedImage[];
+    imageUrl?: string;
 }
 
 interface JobFormProps {
@@ -353,17 +410,39 @@ const JobForm: React.FC<JobFormProps> = ({ item, onSubmit, onCancel, isSubmittin
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.images.length === 0) {
             alert('Please upload at least one image');
             return;
         }
 
-        onSubmit({
-            ...formData,
-            imageUrl: formData.images[0].previewUrl // Use first image as primary
-        });
+        try {
+            // Upload images to jobs bucket
+            const files = formData.images.map(img => img.file);
+            const timestamp = new Date().getTime();
+            const jobFolder = `${item?.id || timestamp}`;
+            const uploadedUrls = await storageService.uploadMultipleImages(files, 'jobs', jobFolder);
+
+            // If updating, delete old images
+            if (item?.id && item.imageUrl) {
+                try {
+                    await storageService.deleteImage(item.imageUrl, 'jobs');
+                } catch (error) {
+                    console.warn('Failed to delete old job image:', error);
+                }
+            }
+
+            // Submit with uploaded image URL
+            onSubmit({
+                ...formData,
+                imageUrl: uploadedUrls[0], // Use first uploaded image as primary
+                images: undefined // Remove the temporary images array
+            });
+        } catch (error) {
+            console.error('Error uploading job images:', error);
+            alert('Failed to upload images. Please try again.');
+        }
     };
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -413,10 +492,12 @@ const JobForm: React.FC<JobFormProps> = ({ item, onSubmit, onCancel, isSubmittin
 };
 
 interface HostelFormData {
+    id?: string;
     name: string;
     location: string;
     priceRange: string;
     images: UploadedImage[];
+    imageUrls?: string[];
     rating: number;
     universityId: string;
     description: string;
@@ -432,21 +513,24 @@ interface HostelFormProps {
     isSubmitting: boolean;
 }
 
+// Replace your HostelForm component with this fixed version
+
 const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, universities, isSubmitting }) => {
     // Ensure we always have a valid UUID for universityId
     const defaultUniversity = universities.find(u => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id));
     const defaultUniversityId = defaultUniversity?.id || '123e4567-e89b-12d3-a456-426614174001';
 
-    const [formData, setFormData] = useState(item || {
-        name: '', 
-        location: '', 
-        priceRange: '', 
-        images: [], 
-        rating: 4.0, 
-        universityId: defaultUniversityId, // Use the validated UUID
-        description: '', 
-        amenities: [], 
-        isRecommended: false
+    // FIX: Ensure images is always initialized as an array
+    const [formData, setFormData] = useState<HostelFormData>({
+        name: item?.name || '', 
+        location: item?.location || '', 
+        priceRange: item?.priceRange || '', 
+        images: item?.images || [], // FIX: Add fallback to empty array
+        rating: item?.rating || 4.0, 
+        universityId: item?.universityId || defaultUniversityId,
+        description: item?.description || '', 
+        amenities: item?.amenities || [], // FIX: Add fallback to empty array
+        isRecommended: item?.isRecommended || false
     });
     
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -459,7 +543,7 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
             const imageUrl = URL.createObjectURL(file);
             setFormData(prev => ({
                 ...prev,
-                images: [...prev.images, { file, previewUrl: imageUrl } as UploadedImage]
+                images: [...(prev.images || []), { file, previewUrl: imageUrl } as UploadedImage] // FIX: Add fallback
             }));
         });
     };
@@ -467,7 +551,7 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
     const removeImage = (index: number) => {
         setFormData(prev => ({
             ...prev,
-            images: prev.images.filter((_, i) => i !== index)
+            images: (prev.images || []).filter((_, i) => i !== index) // FIX: Add fallback
         }));
     };
 
@@ -478,38 +562,71 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
     };
 
     const handleAmenityChange = (index: number, field: 'name' | 'icon', value: string) => {
-        const newAmenities = [...formData.amenities];
+        const newAmenities = [...(formData.amenities || [])]; // FIX: Add fallback
         newAmenities[index][field] = value;
         setFormData(prev => ({ ...prev, amenities: newAmenities }));
     };
 
     const addAmenity = () => {
-        setFormData(prev => ({ ...prev, amenities: [...prev.amenities, { name: '', icon: 'fas fa-check' }] }));
+        setFormData(prev => ({ ...prev, amenities: [...(prev.amenities || []), { name: '', icon: 'fas fa-check' }] })); // FIX: Add fallback
     };
 
     const removeAmenity = (index: number) => {
-        const newAmenities = formData.amenities.filter((_, i) => i !== index);
+        const newAmenities = (formData.amenities || []).filter((_, i) => i !== index); // FIX: Add fallback
         setFormData(prev => ({ ...prev, amenities: newAmenities }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (formData.images.length === 0) {
+        // FIX: Add safe length check
+        if (!formData.images || formData.images.length === 0) {
             alert('Please upload at least one image');
             return;
         }
         
-        // Get all image URLs from uploads
-        const imageUrls = formData.images.map(img => img.previewUrl);
-        
-        // Submit the form with uploaded images
-        onSubmit({
-            ...formData,
-            rating: parseFloat(formData.rating),
-            imageUrl: imageUrls[0], // Set first image as primary
-            imageUrls: imageUrls // All images including primary
-        });
+        try {
+            // Upload all images to Supabase storage in the hostels bucket
+            const files = formData.images.map(img => img.file);
+            
+            // Create a unique folder for each hostel using timestamp
+            const timestamp = new Date().getTime();
+            const hostelFolder = `${item?.id || timestamp}`;
+            
+            const uploadedUrls = await storageService.uploadMultipleImages(files, 'hostels', hostelFolder);
+            
+            // If we're updating an existing hostel, delete old images if they've changed
+            if (item?.id && item.imageUrls) {
+                const oldUrls = new Set(item.imageUrls);
+                const newUrls = new Set(uploadedUrls);
+                const urlsToDelete = item.imageUrls.filter(url => !newUrls.has(url));
+                
+                // Delete old images that are no longer used
+                await Promise.all(
+                    urlsToDelete.map(async (url) => {
+                        try {
+                            await storageService.deleteImage(url, 'hostels');
+                        } catch (error) {
+                            console.warn('Failed to delete old image:', url, error);
+                        }
+                    })
+                );
+            }
+
+            // Prepare the hostel data with both imageUrl and imageUrls
+            const hostelData = {
+                ...formData,
+                rating: formData.rating,
+                imageUrl: uploadedUrls[0],
+                imageUrls: uploadedUrls,
+                images: undefined
+            };
+            
+            onSubmit(hostelData);
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            alert('Failed to upload images. Please try again.');
+        }
     };
 
     return (
@@ -523,11 +640,11 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="w-full"
-                        required={formData.images.length === 0}
+                        required={(formData.images?.length || 0) === 0}
                     />
                     
-                    {/* Image Preview Grid */}
-                    {formData.images.length > 0 && (
+                    {/* FIX: Add safe length check */}
+                    {formData.images && formData.images.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
                             {formData.images.map((img, index) => (
                                 <div key={index} className="relative group">
@@ -559,10 +676,8 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
             <div>
                 <h4 className="font-semibold mb-2">Amenities</h4>
 
-                {/* Predefined amenity options with icons - user can click to toggle */}
-                {/** Define options inside the form so they can access handler functions easily */}
+                {/* Predefined amenity options */}
                 <div className="mb-3">
-                    {/* Amenity options */}
                     {(() => {
                         const AMENITY_OPTIONS = [
                             { name: 'Wifi', icon: 'fas fa-wifi' },
@@ -581,16 +696,16 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
                             { name: 'Gym', icon: 'fa fa-dumbbell' },
                         ];
 
-                        const isSelected = (name) => formData.amenities.some(a => a.name === name);
+                        // FIX: Add safe check for amenities
+                        const isSelected = (name) => (formData.amenities || []).some(a => a.name === name);
                         const toggleAmenityOption = (opt) => {
-                            const existsIndex = formData.amenities.findIndex(a => a.name === opt.name);
+                            const amenities = formData.amenities || [];
+                            const existsIndex = amenities.findIndex(a => a.name === opt.name);
                             if (existsIndex >= 0) {
-                                // remove
-                                const newAmenities = formData.amenities.filter((_, i) => i !== existsIndex);
+                                const newAmenities = amenities.filter((_, i) => i !== existsIndex);
                                 setFormData({ ...formData, amenities: newAmenities });
                             } else {
-                                // add
-                                setFormData({ ...formData, amenities: [...formData.amenities, { name: opt.name, icon: opt.icon }] });
+                                setFormData({ ...formData, amenities: [...amenities, { name: opt.name, icon: opt.icon }] });
                             }
                         };
 
@@ -612,9 +727,9 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
                     })()}
                 </div>
 
-                {/* Custom / added amenities (show as chips with an option to remove) */}
+                {/* FIX: Add safe check for amenities */}
                 <div className="flex flex-wrap gap-2 mb-2">
-                    {formData.amenities.map((amenity, index) => (
+                    {(formData.amenities || []).map((amenity, index) => (
                         <div key={`${amenity.name}-${index}`} className="flex items-center gap-2 bg-white border rounded-full px-3 py-1 text-sm shadow-sm">
                             <i className={`${amenity.icon} text-sm`} />
                             <span className="whitespace-nowrap">{amenity.name}</span>
@@ -625,7 +740,6 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
                     ))}
                 </div>
 
-                {/* Keep a simple add custom amenity flow for edge cases */}
                 <div className="flex items-center gap-2">
                     <Input id="customAmenityName" placeholder="Custom amenity (e.g., Rooftop)" />
                     <Button onClick={() => {
@@ -633,7 +747,7 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
                         if (!input) return;
                         const val = input.value.trim();
                         if (!val) return;
-                        setFormData({ ...formData, amenities: [...formData.amenities, { name: val, icon: 'fas fa-check' }] });
+                        setFormData({ ...formData, amenities: [...(formData.amenities || []), { name: val, icon: 'fas fa-check' }] });
                         input.value = '';
                     }} className="bg-unistay-yellow text-unistay-navy hover:bg-yellow-400"><i className="fas fa-plus mr-2"></i>Add Amenity</Button>
                 </div>
@@ -649,7 +763,6 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
         </form>
     );
 };
-
 
 // --- Content Manager (Generic) ---
 
@@ -693,6 +806,8 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
     const handleSubmit = async (item) => {
         setIsSubmitting(true);
         try {
+            // For hostels, the form component handles the image upload
+            // so we just need to save the data
             if (item.id) {
                 await handler.update(item.id, item);
                 notify({ message: 'Item updated successfully!', type: 'success' });
@@ -703,7 +818,7 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
             onDataChange();
             handleCancel();
         } catch (err) {
-             notify({ message: err, type: 'error' });
+            notify({ message: err, type: 'error' });
         } finally {
             setIsSubmitting(false);
         }
