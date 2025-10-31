@@ -253,7 +253,10 @@ const App = () => {
         <main>
           {currentView === 'main' && (
             <>
-              <Hero />
+              <Hero 
+                hostels={hostels}
+                onHostelSelect={handleViewHostel}
+              />
               <FeaturedContent
                 universities={UNIVERSITIES}
                 selectedUniversity={selectedUniversity}

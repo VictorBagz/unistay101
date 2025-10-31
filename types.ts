@@ -26,21 +26,29 @@ export interface Hostel {
 }
 
 export interface NewsItem {
-  id: string; // Changed from number to string
+  id: string;
   title: string;
   description: string;
   imageUrl: string;
   source: string;
+  timestamp: string; // ISO date string
 }
 
 export interface Event {
-  id: string; // Changed from number to string
+  id: string;
   title: string;
   date: string;
   day: string;
   month: string;
   location: string;
   imageUrl: string;
+  time?: string;
+  price?: string;
+  contacts?: string[];
+  phone?: string;
+  email?: string;
+  description?: string;
+  registrationLink?: string;
 }
 
 export interface Job {

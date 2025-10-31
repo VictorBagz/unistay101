@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Event } from '../types';
+import EventDetailModal from './EventDetailModal';
 
 interface EventsPageProps {
   events: Event[];
@@ -8,6 +9,8 @@ interface EventsPageProps {
 }
 
 const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
     return (
         <div className="bg-gray-100 min-h-screen">
             <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -35,7 +38,10 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
                                     <h3 className="font-bold text-xl text-unistay-navy mb-2 group-hover:text-unistay-yellow transition-colors">{event.title}</h3>
                                     <p className="text-sm text-gray-600"><i className="fas fa-calendar-alt text-gray-400 mr-2"></i>{event.date}</p>
                                     <p className="text-sm text-gray-600 mt-1"><i className="fas fa-map-marker-alt text-gray-400 mr-2"></i>{event.location}</p>
-                                    <button className="mt-4 w-full bg-unistay-navy text-white font-semibold py-2 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105">
+                                    <button 
+                                        onClick={() => setSelectedEvent(event)}
+                                        className="mt-4 w-full bg-unistay-navy text-white font-semibold py-2 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105"
+                                    >
                                         More Info
                                     </button>
                                 </div>
@@ -50,6 +56,14 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
                     </div>
                  )}
             </main>
+
+            {/* Event Detail Modal */}
+            {selectedEvent && (
+                <EventDetailModal
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                />
+            )}
         </div>
     );
 };

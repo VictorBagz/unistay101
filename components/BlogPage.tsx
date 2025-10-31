@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NewsItem } from '../types';
-import Footer from './Footer'; // Assuming Footer is needed on this page too.
+import Footer from './Footer';
+import NewsDetailModal from './NewsDetailModal';
+import { formatTimeAgo } from '../utils/dateUtils';
 
 interface BlogPageProps {
   news: NewsItem[];
@@ -9,6 +11,7 @@ interface BlogPageProps {
 }
 
 const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
+    const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
     const featuredPost = news.length > 0 ? news[0] : null;
     const otherPosts = news.length > 1 ? news.slice(1) : [];
 
@@ -34,9 +37,16 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                             <div>
                                 <p className="text-unistay-yellow font-semibold mb-2">Featured Article</p>
                                 <h2 className="text-4xl font-extrabold text-unistay-navy mb-4">{featuredPost.title}</h2>
-                                <p className="text-gray-600 text-lg mb-4">{featuredPost.description}</p>
-                                <p className="text-sm text-gray-500">Source: {featuredPost.source}</p>
-                                <button className="mt-6 bg-unistay-navy text-white font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105">Read More</button>
+                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
+                                    <p>{formatTimeAgo(featuredPost.timestamp)}</p>
+                                    <p>Source: {featuredPost.source}</p>
+                                </div>
+                                <button 
+                                    onClick={() => setSelectedNews(featuredPost)}
+                                    className="mt-6 bg-unistay-navy text-white font-bold py-3 px-8 rounded-full hover:bg-opacity-90 transition-all transform hover:scale-105 flex items-center gap-2"
+                                >
+                                    Read Full Article <i className="fas fa-arrow-right"></i>
+                                </button>
                             </div>
                         </div>
                     </section>
@@ -52,9 +62,17 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                                     <img src={post.imageUrl.replace('/100/100', '/400/300')} alt={post.title} className="h-48 w-full object-cover"/>
                                     <div className="p-6 flex flex-col flex-grow">
                                         <h4 className="text-xl font-bold text-unistay-navy flex-grow group-hover:text-unistay-yellow transition-colors">{post.title}</h4>
-                                        <p className="text-gray-600 mt-2 text-sm flex-grow">{post.description}</p>
-                                        <div className="pt-4 mt-4 border-t border-gray-100">
+                                        <div className="flex justify-between items-center mt-2 mb-4">
+                                            <p className="text-xs text-gray-400">{formatTimeAgo(post.timestamp)}</p>
                                             <p className="text-xs text-gray-400">Source: {post.source}</p>
+                                        </div>
+                                        <div className="pt-4 border-t border-gray-100 flex justify-end">
+                                            <button 
+                                                onClick={() => setSelectedNews(post)} 
+                                                className="text-sm font-semibold text-unistay-yellow hover:text-unistay-navy transition-colors flex items-center gap-1"
+                                            >
+                                                Read More <i className="fas fa-arrow-right"></i>
+                                            </button>
                                         </div>
                                     </div>
                                  </div>
@@ -69,6 +87,12 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                     )}
                 </section>
             </main>
+            
+            {/* News Detail Modal */}
+            <NewsDetailModal 
+                news={selectedNews}
+                onClose={() => setSelectedNews(null)}
+            />
         </div>
     );
 };

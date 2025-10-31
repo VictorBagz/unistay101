@@ -3,19 +3,28 @@ import React, { useState, useCallback } from 'react';
 import { NewsItem, Event, Job, University, User } from '../types';
 import { fetchCampusGuide } from '../services/geminiService';
 import { useScrollObserver } from '../hooks/useScrollObserver';
+import { formatTimeAgo } from '../utils/dateUtils';
 import Spinner from './Spinner';
 
 type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
-const NewsPanel = ({ items }: { items: NewsItem[] }) => (
+const NewsPanel = ({ items, onNavigateToBlog }: { items: NewsItem[], onNavigateToBlog: () => void }) => (
   <div className="space-y-4">
     {items.map(item => (
       <div key={item.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
         <img src={item.imageUrl} alt={item.title} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
         <div className="flex-1">
           <p className="font-bold text-unistay-navy">{item.title}</p>
-          <p className="text-sm text-gray-600">{item.description}</p>
-          <p className="text-xs text-gray-400 mt-1">Source: {item.source}</p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-xs text-gray-400">{formatTimeAgo(item.timestamp)}</p>
+            <p className="text-xs text-gray-400">Source: {item.source}</p>
+          </div>
+          <button 
+            onClick={onNavigateToBlog}
+            className="mt-2 text-sm font-semibold text-unistay-yellow hover:text-unistay-navy transition-colors"
+          >
+            Read Full Article <i className="fas fa-arrow-right ml-1"></i>
+          </button>
         </div>
       </div>
     ))}
@@ -179,7 +188,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
   ];
 
   const panels = {
-    News: <NewsPanel items={news} />,
+    News: <NewsPanel items={news} onNavigateToBlog={onNavigateToBlog} />,
     Events: <EventsPanel items={events} />,
     Jobs: <JobsPanel items={jobs} />,
   };

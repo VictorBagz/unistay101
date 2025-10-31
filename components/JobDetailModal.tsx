@@ -59,19 +59,23 @@ const JobDetailModal = ({ job, onClose }: JobDetailModalProps) => {
             <p className="text-gray-700 leading-relaxed">{job.description}</p>
           </div>
 
-          <div>
-            <h3 className="text-lg font-bold text-unistay-navy mb-2">Responsibilities</h3>
-            <ul className="list-disc list-inside space-y-1 text-gray-700">
-              {job.responsibilities.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
+          {job.responsibilities && job.responsibilities.length > 0 && (
+            <div>
+              <h3 className="text-lg font-bold text-unistay-navy mb-2">Responsibilities</h3>
+              <ul className="list-disc list-inside space-y-1 text-gray-700">
+                {job.responsibilities.map((item, index) => <li key={index}>{item}</li>)}
+              </ul>
+            </div>
+          )}
 
-          <div>
-            <h3 className="text-lg font-bold text-unistay-navy mb-2">Qualifications</h3>
-            <ul className="list-disc list-inside space-y-1 text-gray-700">
-              {job.qualifications.map((item, index) => <li key={index}>{item}</li>)}
-            </ul>
-          </div>
+          {job.qualifications && job.qualifications.length > 0 && (
+            <div>
+              <h3 className="text-lg font-bold text-unistay-navy mb-2">Qualifications</h3>
+              <ul className="list-disc list-inside space-y-1 text-gray-700">
+                {job.qualifications.map((item, index) => <li key={index}>{item}</li>)}
+              </ul>
+            </div>
+          )}
         </div>
         
         {/* Footer */}

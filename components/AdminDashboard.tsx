@@ -233,6 +233,12 @@ interface EventFormData {
     images: UploadedImage[];
     date?: string;
     imageUrl?: string;
+    price?: string;
+    description?: string;
+    contacts?: string[];
+    phone?: string;
+    email?: string;
+    time?: string;
 }
 
 interface EventFormProps {
@@ -248,11 +254,18 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
         title: item?.title || '',
         dateInput: item ? toInputDate(item.date) : '',
         location: item?.location || '',
-        images: []
+        price: item?.price || 'Free Entry',
+        description: item?.description || '',
+        contacts: item?.contacts || [''],
+        phone: item?.phone || '',
+        email: item?.email || '',
+        time: item?.time || '',
+        images: item?.imageUrl ? [{ file: null as any, previewUrl: item.imageUrl }] : []
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -305,6 +318,12 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
                 day: eventDate.toLocaleDateString('en-US', { day: '2-digit' }),
                 month: eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
                 imageUrl: uploadedUrls[0], // Use first uploaded image as primary
+                price: formData.price || 'Free Entry',
+                description: formData.description?.trim(),
+                contacts: formData.contacts?.filter(contact => contact.trim()),
+                phone: formData.phone?.trim(),
+                email: formData.email?.trim(),
+                time: formData.time,
                 images: undefined // Remove the temporary images array
             };
             delete processedEvent.dateInput;
@@ -315,12 +334,117 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
         }
     };
 
+    const addContact = () => {
+        setFormData(prev => ({
+            ...prev,
+            contacts: [...(prev.contacts || []), '']
+        }));
+    };
+
+    const removeContact = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            contacts: prev.contacts?.filter((_, i) => i !== index) || []
+        }));
+    };
+
+    const updateContact = (index: number, value: string) => {
+        const newContacts = [...(formData.contacts || [])];
+        newContacts[index] = value;
+        setFormData(prev => ({
+            ...prev,
+            contacts: newContacts
+        }));
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
-            <Input name="dateInput" type="date" value={formData.dateInput} onChange={handleChange} required />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input name="dateInput" type="date" value={formData.dateInput} onChange={handleChange} required />
+                <Input name="time" type="time" value={formData.time} onChange={handleChange} placeholder="Time" required />
+            </div>
+
             <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" required />
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                    <Input 
+                        name="price" 
+                        value={formData.price} 
+                        onChange={handleChange} 
+                        placeholder="Entrance Fee (e.g., 10000 or 'Free Entry')" 
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, price: 'Free Entry' }))}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-unistay-yellow hover:text-unistay-navy"
+                    >
+                        Set as Free
+                    </button>
+                </div>
+            </div>
+
+            <Textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleChange} 
+                placeholder="Event Description" 
+                required 
+            />
+
+            {/* Contact Information */}
+            <div className="space-y-4">
+                <h3 className="font-semibold text-gray-700">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input 
+                        name="phone" 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                        placeholder="Contact Phone" 
+                    />
+                    <Input 
+                        name="email" 
+                        type="email" 
+                        value={formData.email} 
+                        onChange={handleChange} 
+                        placeholder="Contact Email" 
+                    />
+                </div>
+
+                {/* Contact Persons */}
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                        <label className="text-sm text-gray-700">Contact Persons</label>
+                        <button
+                            type="button"
+                            onClick={addContact}
+                            className="text-sm text-unistay-yellow hover:text-unistay-navy transition-colors"
+                        >
+                            <i className="fas fa-plus mr-1"></i>
+                            Add Contact
+                        </button>
+                    </div>
+                    {formData.contacts?.map((contact, index) => (
+                        <div key={index} className="flex gap-2">
+                            <Input
+                                value={contact}
+                                onChange={(e) => updateContact(index, e.target.value)}
+                                placeholder="Contact Person Name"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeContact(index)}
+                                className="text-red-500 hover:text-red-700"
+                            >
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             {/* Image Upload Section */}
             <div className="space-y-4">
                 <Input 
@@ -354,7 +478,7 @@ const EventForm: React.FC<EventFormProps> = ({ item, onSubmit, onCancel, isSubmi
                 )}
             </div>
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end pt-4 border-t">
                 <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
                 <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Add'} Event</Button>
             </div>
@@ -427,7 +551,8 @@ const JobForm: React.FC<JobFormProps> = ({ item, onSubmit, onCancel, isSubmittin
             // If updating, delete old images
             if (item?.id && item.imageUrl) {
                 try {
-                    await storageService.deleteImage(item.imageUrl, 'jobs');
+                    const oldImagePath = item.imageUrl.split('/').slice(-2).join('/');
+                    await storageService.deleteImage(oldImagePath, 'jobs');
                 } catch (error) {
                     console.warn('Failed to delete old job image:', error);
                 }
