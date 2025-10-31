@@ -315,11 +315,13 @@ const App = () => {
           {currentView === 'profile' && currentUser && (
               <ProfilePage
                   user={currentUser}
-                  profile={roommateProfiles.find(p => p.id === currentUser.id) || null}
+                  profile={roommateProfiles.find(p => p.id === currentUser.id)}
                   onNavigate={handleNavigation}
-                  onLogout={handleLogout}
+                  onSignOut={handleLogout}
                   universities={UNIVERSITIES}
                   onDataChange={refreshAllData}
+                  savedHostels={Array.from(savedHostels).map(id => hostels.find(h => h.id === id)).filter(Boolean) as Hostel[]}
+                  onToggleSaveHostel={handleToggleSaveHostel}
               />
           )}
 

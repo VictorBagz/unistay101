@@ -5,15 +5,17 @@ import reactSwc from '@vitejs/plugin-react-swc';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const isProd = mode === 'production';
+
     return {
       server: {
         port: 3000,
         host: '0.0.0.0',
-        open: true, // Opens the browser automatically
+        open: true,
       },
       plugins: [
         // Use SWC in development for faster refresh
-        mode === 'development' ? reactSwc() : react(),
+        mode === 'development' ? reactSwc() : react()
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
@@ -25,22 +27,30 @@ export default defineConfig(({ mode }) => {
         }
       },
       optimizeDeps: {
-        include: ['react', 'react-dom'],
+        include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
       },
       build: {
-        sourcemap: true,
+        sourcemap: !isProd,
+        minify: isProd ? 'esbuild' : false,
+        target: 'esnext',
         rollupOptions: {
           output: {
             manualChunks: {
               'react-vendor': ['react', 'react-dom'],
-            },
-          },
+              'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+              'ui-vendor': ['@headlessui/react', '@heroicons/react'],
+            }
+          }
         },
+        chunkSizeWarningLimit: 1000
       },
-      // Enable detailed error overlays
+      // Enable detailed error overlays in development
       esbuild: {
         jsxInject: `import React from 'react'`,
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
+        ...(isProd && {
+          drop: ['console', 'debugger']
+        })
       }
     };
 });

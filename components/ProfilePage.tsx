@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { User, RoommateProfile, University } from '../types';
+import { User, RoommateProfile, University, Hostel } from '../types';
 import Spinner from './Spinner';
 import { useNotifier } from '../hooks/useNotifier';
 import { authService } from '../services/authService';
@@ -8,10 +8,12 @@ type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' |
 
 interface ProfilePageProps {
   user: User;
-  profile: RoommateProfile | null;
-  onNavigate: (view: AppView) => void;
-  onLogout: () => void;
+  onSignOut: () => void;
+  savedHostels: Hostel[];
+  onToggleSaveHostel: (hostelId: string) => void;
+  profile?: RoommateProfile;
   universities: University[];
+  onNavigate: (page: string) => void;
   onDataChange: () => void;
 }
 
@@ -28,7 +30,16 @@ const ProfileStatCard = ({ icon, label, value }) => (
 );
 
 
-const ProfilePage = ({ user, profile, onNavigate, onLogout, universities, onDataChange }: ProfilePageProps) => {
+const ProfilePage = ({ 
+    user, 
+    savedHostels, 
+    onSignOut, 
+    onToggleSaveHostel,
+    profile,
+    universities,
+    onNavigate,
+    onDataChange
+}: ProfilePageProps) => {
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { notify } = useNotifier();
@@ -124,7 +135,7 @@ const ProfilePage = ({ user, profile, onNavigate, onLogout, universities, onData
                          <div className="bg-white rounded-2xl shadow-xl p-6">
                             <h3 className="text-xl font-bold text-unistay-navy mb-4">Account</h3>
                              <button 
-                                onClick={onLogout}
+                                onClick={onSignOut}
                                 className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-3"
                             >
                                 <i className="fas fa-sign-out-alt w-5"></i>
@@ -165,13 +176,42 @@ const ProfilePage = ({ user, profile, onNavigate, onLogout, universities, onData
                                     </div>
                                     <i className="fas fa-chevron-right text-gray-400"></i>
                                 </button>
-                                <button className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-not-allowed opacity-60">
-                                    <div className="flex items-center gap-4">
-                                        <i className="fas fa-heart text-unistay-navy"></i>
-                                        <span className="font-semibold">Saved Hostels</span>
+                                {savedHostels.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between px-4">
+                                            <div className="flex items-center gap-4">
+                                                <i className="fas fa-heart text-unistay-navy"></i>
+                                                <span className="font-semibold">Saved Hostels ({savedHostels.length})</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 px-4">
+                                            {savedHostels.map(hostel => (
+                                                <div key={hostel.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50">
+                                                    <div>
+                                                        <h4 className="font-semibold text-unistay-navy">{hostel.name}</h4>
+                                                        <p className="text-sm text-gray-600">{hostel.priceRange}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => onToggleSaveHostel(hostel.id)}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-full"
+                                                            title="Remove from saved"
+                                                        >
+                                                            <i className="fas fa-heart"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <i className="fas fa-chevron-right text-gray-400"></i>
-                                </button>
+                                ) : (
+                                    <div className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <i className="far fa-heart text-unistay-navy"></i>
+                                            <span className="font-semibold">No Saved Hostels</span>
+                                        </div>
+                                    </div>
+                                )}
                                  <button className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-not-allowed opacity-60">
                                     <div className="flex items-center gap-4">
                                         <i className="fas fa-file-alt text-unistay-navy"></i>
