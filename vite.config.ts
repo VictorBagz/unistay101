@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
     const isProd = mode === 'production';
 
     return {
+      base: '/unistay101/', 
       server: {
         port: 3000,
         host: '0.0.0.0',
@@ -27,7 +28,7 @@ export default defineConfig(({ mode }) => {
         }
       },
       optimizeDeps: {
-        include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+        include: ['react', 'react-dom'],
       },
       build: {
         sourcemap: !isProd,
@@ -36,9 +37,7 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             manualChunks: {
-              'react-vendor': ['react', 'react-dom'],
-              'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-              'ui-vendor': ['@headlessui/react', '@heroicons/react'],
+              'react-vendor': ['react', 'react-dom']
             }
           }
         },
@@ -46,7 +45,6 @@ export default defineConfig(({ mode }) => {
       },
       // Enable detailed error overlays in development
       esbuild: {
-        jsxInject: `import React from 'react'`,
         logOverride: { 'this-is-undefined-in-esm': 'silent' },
         ...(isProd && {
           drop: ['console', 'debugger']

@@ -1,4 +1,94 @@
-import { University, Service, RoommateProfile } from './types';
+import { University, Service, RoommateProfile, Hostel, NewsItem, Event, Job } from './types';
+
+// Mock Data
+export const HOSTELS: Hostel[] = [
+  {
+    id: '1',
+    name: 'Olympia Hostel',
+    location: 'Makerere Kikoni',
+    priceRange: '600,000 - 1,200,000 UGX',
+    imageUrl: '/images/hostels/olympia.jpg',
+    imageUrls: ['/images/hostels/olympia.jpg'],
+    rating: 4.5,
+    universityId: '123e4567-e89b-12d3-a456-426614174001',
+    description: 'Luxury student accommodation near Makerere University',
+    amenities: [
+      { name: 'WiFi', icon: 'fas fa-wifi' },
+      { name: 'Security', icon: 'fas fa-shield-alt' },
+      { name: 'DSTV', icon: 'fas fa-tv' }
+    ],
+    isRecommended: true
+  }
+];
+
+export const NEWS_ITEMS: NewsItem[] = [
+  {
+    id: '1',
+    title: 'New Student Housing Development',
+    description: 'Major new student housing development announced near Makerere',
+    imageUrl: '/images/news/housing.jpg',
+    source: 'UniStay News',
+    timestamp: new Date().toISOString()
+  }
+];
+
+export const EVENTS: Event[] = [
+  {
+    id: '1',
+    title: 'Housing Fair 2025',
+    date: '2025-11-15',
+    day: '15',
+    month: 'NOV',
+    location: 'Freedom Square',
+    imageUrl: '/images/events/housing-fair.jpg',
+    time: '10:00 AM',
+    price: 'Free',
+    description: 'Annual housing fair for students'
+  }
+];
+
+export const JOBS: Job[] = [
+  {
+    id: '1',
+    title: 'Student Ambassador',
+    deadline: '2025-12-01',
+    company: 'UniStay',
+    imageUrl: '/images/jobs/ambassador.jpg',
+    location: 'Kampala',
+    type: 'Part-time',
+    description: 'Represent UniStay on campus',
+    responsibilities: ['Campus outreach', 'Social media management'],
+    qualifications: ['Current student', 'Good communication skills'],
+    howToApply: 'https://unistay.com/careers'
+  }
+];
+
+export const ROOMMATE_PROFILES: RoommateProfile[] = [
+  {
+    id: 'demo1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    universityId: '123e4567-e89b-12d3-a456-426614174001',
+    contactNumber: '+256700000000',
+    studentNumber: 'MAK/000001',
+    imageUrl: '/images/profiles/default.jpg',
+    age: 20,
+    gender: 'Male',
+    course: 'Computer Science',
+    yearOfStudy: 2,
+    budget: 800000,
+    moveInDate: '2025-09-01',
+    leaseDuration: 'Semester',
+    bio: 'Tech enthusiast looking for like-minded roommate',
+    isSmoker: false,
+    drinksAlcohol: 'Rarely',
+    studySchedule: 'Night Owl',
+    cleanliness: 'Tidy',
+    guestFrequency: 'Sometimes',
+    hobbies: 'Programming, Gaming, Reading',
+    seekingGender: 'Any'
+  }
+];
 
 // Core feature constants
 export const UNIVERSITIES: University[] = [

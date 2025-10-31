@@ -94,7 +94,7 @@ const App = () => {
       const user = formatUser(session?.user || null);
       if (isSubscribed) {
         setCurrentUser(user);
-        setIsAdmin(user?.email === 'admin@unistay.com' || user?.email === 'victorbaguma34@gmail.com');
+        setIsAdmin(user?.email === 'admin@unistay.com' || user?.email === 'victorbaguma34@gmail.com' || user?.email === 'drilebaroy33@gmail.com');
         
         if (!user) {
           setSavedHostels(new Set());
