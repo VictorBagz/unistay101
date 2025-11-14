@@ -28,7 +28,8 @@ export const NEWS_ITEMS: NewsItem[] = [
     description: 'Major new student housing development announced near Makerere',
     imageUrl: '/images/news/housing.jpg',
     source: 'UniStay News',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    featured: false
   }
 ];
 

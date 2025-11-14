@@ -15,6 +15,11 @@ interface ProfilePageProps {
   universities: University[];
   onNavigate: (page: string) => void;
   onDataChange: () => void;
+  confessions?: any[];
+  confessionHandler?: {
+    add: (content: string) => Promise<void>;
+    remove: (id: string) => Promise<void>;
+  };
 }
 
 const ProfileStatCard = ({ icon, label, value }) => (
@@ -38,9 +43,13 @@ const ProfilePage = ({
     profile,
     universities,
     onNavigate,
-    onDataChange
+    onDataChange,
+    confessions = [],
+    confessionHandler
 }: ProfilePageProps) => {
     const [isUploading, setIsUploading] = useState(false);
+    const [confessionContent, setConfessionContent] = useState('');
+    const [isSubmittingConfession, setIsSubmittingConfession] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { notify } = useNotifier();
 
@@ -71,6 +80,22 @@ const ProfilePage = ({
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
+        }
+    };
+
+    const handleSubmitConfession = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!confessionContent.trim() || !confessionHandler) return;
+
+        setIsSubmittingConfession(true);
+        try {
+            await confessionHandler.add(confessionContent.trim());
+            setConfessionContent('');
+            notify({ message: 'Your confession has been posted anonymously!', type: 'success' });
+        } catch (err) {
+            notify({ message: 'Failed to post confession', type: 'error' });
+        } finally {
+            setIsSubmittingConfession(false);
         }
     };
     
@@ -222,6 +247,71 @@ const ProfilePage = ({
                             </div>
                          </div>
                     </div>
+                </div>
+
+                {/* Anonymous Confessions Section */}
+                <div className="mt-8 space-y-8">
+                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                        <h3 className="text-xl font-bold text-unistay-navy mb-4">💭 Share an Anonymous Confession</h3>
+                        <form onSubmit={handleSubmitConfession} className="space-y-4">
+                            <textarea
+                                value={confessionContent}
+                                onChange={(e) => setConfessionContent(e.target.value)}
+                                placeholder="Share your thoughts anonymously... Keep it positive and respectful! You can use emojis 😊"
+                                maxLength={250}
+                                rows={4}
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-unistay-yellow focus:border-transparent resize-none font-sans"
+                                disabled={isSubmittingConfession}
+                            />
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">{confessionContent.length}/250 characters</span>
+                                <button
+                                    type="submit"
+                                    disabled={!confessionContent.trim() || isSubmittingConfession}
+                                    className="bg-unistay-navy text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isSubmittingConfession ? (
+                                        <>
+                                            <Spinner color="white" size="sm" />
+                                            Posting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-paper-plane"></i>
+                                            Post Confession
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Display Recent Confessions */}
+                    {confessions.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                            <h3 className="text-xl font-bold text-unistay-navy mb-4">Recent Confessions</h3>
+                            <div className="space-y-4">
+                                {confessions.slice(0, 5).map((confession) => (
+                                    <div
+                                        key={confession.id}
+                                        className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-purple-200"
+                                    >
+                                        <p className="text-gray-800 italic">{confession.content}</p>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <span className="text-xs text-gray-500">
+                                                {new Date(confession.timestamp).toLocaleDateString()} • {new Date(confession.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            <div className="flex items-center gap-4">
+                                                <button className="text-sm text-purple-600 hover:text-purple-800 transition-colors flex items-center gap-1">
+                                                    <i className="fas fa-heart"></i> {confession.reactions}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

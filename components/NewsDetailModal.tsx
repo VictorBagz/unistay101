@@ -21,6 +21,24 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
         };
     }, [handleEscape]);
 
+    // Function to parse markdown-like text to HTML and handle inline images
+    const renderMarkdownContent = (text: string) => {
+        // Split by inline image markers
+        const parts = text.split(/(\[INLINE_IMAGE:[^\]]+\])/);
+        return parts.map((part) => {
+            if (part.startsWith('[INLINE_IMAGE:')) {
+                // Extract the image URL
+                const imageUrl = part.slice(14, -1); // Remove [INLINE_IMAGE: and ]
+                return `</p><div class="my-4 flex justify-center"><img src="${imageUrl}" alt="Article image" class="max-w-full h-auto rounded-lg shadow-md max-h-96" /></div><p>`;
+            } else {
+                // Regular text with formatting
+                return part
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            }
+        }).join('');
+    };
+
     const handleShare = (platform: 'twitter' | 'facebook' | 'linkedin' | 'whatsapp') => {
         if (!news) return;
 
@@ -68,9 +86,12 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
                     </div>
                     <h2 className="text-3xl font-bold text-unistay-navy mb-6">{news.title}</h2>
                     <div className="prose max-w-none">
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                            {news.description}
-                        </p>
+                        <div 
+                            className="text-gray-600 leading-relaxed space-y-4"
+                            dangerouslySetInnerHTML={{ 
+                                __html: `<p>${renderMarkdownContent(news.description)}</p>` 
+                            }}
+                        />
                     </div>
 
                     {/* Footer */}

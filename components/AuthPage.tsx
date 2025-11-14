@@ -9,24 +9,7 @@ interface AuthPageProps {
   onAuthSuccess: () => void;
   onNavigateHome: () => void;
 }
-
-const SocialButton = ({ provider, icon, onClick, disabled, isLoading }: { provider: string; icon: string; onClick: () => void; disabled: boolean; isLoading: boolean }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-full shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-unistay-yellow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-        {isLoading ? (
-            <Spinner color="navy" size="md" />
-        ) : (
-           <>
-            <i className={`fab ${icon} text-xl`}></i>
-            <span>Continue with {provider}</span>
-           </>
-        )}
-    </button>
-);
+// Social sign-in removed (Google button) per request. Keeping email/password flow only.
 
 
 const AuthPage = ({ onAuthSuccess, onNavigateHome }: AuthPageProps) => {
@@ -118,16 +101,7 @@ const AuthPage = ({ onAuthSuccess, onNavigateHome }: AuthPageProps) => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google') => {
-      setLoadingProvider(provider);
-      try {
-          await authService.socialLoginRedirect(provider);
-          // onAuthSuccess is not called here because the page will redirect.
-      } catch (err) {
-          notify({ message: err, type: 'error' });
-          setLoadingProvider(null);
-      }
-  };
+  // social login removed
 
   const toggleShowPassword = (field: 'password' | 'confirmPassword') => {
     setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
@@ -160,21 +134,7 @@ const AuthPage = ({ onAuthSuccess, onNavigateHome }: AuthPageProps) => {
         <div className="bg-white rounded-2xl shadow-xl p-8">
             <h2 className="text-3xl font-bold text-center text-unistay-navy mb-6">{isLogin ? 'Welcome Back!' : 'Create Your Account'}</h2>
             
-            <div className="space-y-4">
-                <SocialButton
-                    provider="Google"
-                    icon="fa-google"
-                    onClick={() => handleSocialLogin('google')}
-                    disabled={isLoading}
-                    isLoading={loadingProvider === 'google'}
-                />
-            </div>
-
-            <div className="my-6 flex items-center">
-                <div className="flex-grow border-t border-gray-200"></div>
-                <span className="flex-shrink mx-4 text-gray-500 text-sm font-semibold">OR</span>
-                <div className="flex-grow border-t border-gray-200"></div>
-            </div>
+            {/* Social sign-in removed: email/password form only */}
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 {!isLogin && (

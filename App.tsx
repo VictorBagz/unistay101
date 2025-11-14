@@ -6,6 +6,7 @@ import Hero from './components/Hero';
 import FeaturedContent from './components/FeaturedContent';
 import CommunityHub from './components/CommunityHub';
 import Services from './components/Services';
+import ContactForm from './components/ContactForm';
 import Footer from './components/Footer';
 import HostelDetailModal from './components/HostelDetailModal';
 import RoommateFinder from './components/RoommateFinder';
@@ -28,7 +29,13 @@ import { University, Hostel, NewsItem, Job, Event, User, RoommateProfile, Notifi
 import { supabase } from './services/supabase';
 import { authService, formatUser } from './services/authService';
 // Switch from mockDbService to live dbService
-import { hostelService, newsService, eventService, jobService, roommateProfileService, hostelHandler, newsHandler, eventHandler, jobHandler } from './services/dbService';
+import { 
+    hostelService, newsService, eventService, jobService, roommateProfileService, 
+    hostelHandler, newsHandler, eventHandler, jobHandler, 
+    confessionHandler, confessionService, spotlightService, spotlightHandler,
+    studentDealsService, studentDealsHandler
+} from './services/dbService';
+import { contactService, contactHandler } from './services/contactService';
 
 type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
@@ -60,6 +67,113 @@ const App = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [roommateProfiles, setRoommateProfiles] = useState<RoommateProfile[]>([]);
+  const [contactMessages, setContactMessages] = useState<any[]>([]);
+
+  // New community hub sections state
+  const [deals, setDeals] = useState<any[]>([
+    {
+      id: '1',
+      title: 'Pizza Hut Discount',
+      description: 'Get 30% off on your first order with student ID',
+      discount: 30,
+      imageUrl: 'https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=400&h=300&fit=crop',
+      postedBy: 'John Doe',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Gym Membership Special',
+      description: 'Student gym membership at half price for 3 months',
+      discount: 50,
+      imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop',
+      postedBy: 'Jane Smith',
+      timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '3',
+      title: 'Movie Tickets',
+      description: 'Student discount on weekday movie tickets',
+      discount: 25,
+      imageUrl: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&h=300&fit=crop',
+      postedBy: 'Admin',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    },
+  ]);
+
+  const [lostItems, setLostItems] = useState<any[]>([
+    {
+      id: '1',
+      title: 'Lost: Blue Backpack',
+      description: 'Lost near the library on Monday. Contains laptop and textbooks.',
+      category: 'lost',
+      imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=300&fit=crop',
+      postedBy: 'Sarah Johnson',
+      phone: '+234 (0) 810 123 4567',
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Found: Black Wallet',
+      description: 'Found in the cafeteria. Contains ID and some cards. Contact to claim.',
+      category: 'found',
+      imageUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=300&fit=crop',
+      postedBy: 'Michael Chen',
+      phone: '+234 (0) 805 987 6543',
+      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    },
+  ]);
+
+  const [studentSpotlights, setStudentSpotlights] = useState<any[]>([]);
+
+  // Spotlights are now managed via database (spotlightHandler from dbService)
+
+  const [confessions, setConfessions] = useState<any[]>([]);
+  const [pendingConfessions, setPendingConfessions] = useState<any[]>([]);
+
+  // Use DB-backed confessionHandler (from dbService)
+  // We'll keep a local wrapper to update UI state when DB events arrive
+  // initial fetch and realtime subscription handled in effect below
+
+  // Normalize likes/dislikes from DB (handles numbers, arrays, JSON strings)
+  const normalizeCount = (v: any): number => {
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;
+    if (Array.isArray(v)) {
+      // if array of numbers, sum; otherwise use length
+      if (v.every((x: any) => typeof x === 'number')) return v.reduce((s: number, x: number) => s + x, 0);
+      return v.length;
+    }
+    if (typeof v === 'string') {
+      // try JSON parse (e.g. stored as '[0]')
+      try {
+        const p = JSON.parse(v);
+        return normalizeCount(p);
+      } catch (e) {
+        // fallback: try parseInt
+        const n = parseInt(v, 10);
+        return Number.isNaN(n) ? 0 : n;
+      }
+    }
+    if (typeof v === 'object') {
+      if ('length' in v && typeof v.length === 'number') return v.length;
+      return 0;
+    }
+    return 0;
+  };
+
+  // --- Lost & Found handlers
+  const lostFoundHandler = {
+    add: async (item: Omit<any, 'id'>) => {
+      const newItem = { ...item, id: `lostfound-${Date.now()}`, timestamp: new Date().toISOString() };
+      setLostItems(prev => [newItem, ...prev]);
+    },
+    update: async (item: any) => {
+      setLostItems(prev => prev.map(li => li.id === item.id ? { ...li, ...item } : li));
+    },
+    remove: async (id: string) => {
+      setLostItems(prev => prev.filter(li => li.id !== id));
+    }
+  };
   
   // --- Effects ---
   // Listen to auth state changes and load initial data
@@ -81,7 +195,48 @@ const App = () => {
           }
           
           await refreshAllData();
-          setIsLoading(false);
+            // Fetch confessions from DB (only approved ones for public display)
+            try {
+              const confs = await confessionService.getApproved();
+              if (isSubscribed) {
+                // Map DB rows to the shape expected by UI (normalize counts)
+                const mapped = confs.map(c => ({
+                  id: c.id,
+                  content: c.content,
+                  timestamp: c.timestamp,
+                  likes: normalizeCount((c as any).likes),
+                  dislikes: normalizeCount((c as any).dislikes),
+                  comments: [],
+                  userLikeStatus: null
+                }));
+                setConfessions(mapped);
+              }
+            } catch (err) {
+              console.error('Failed to load confessions:', err);
+            }
+
+            // Fetch pending confessions for admin (if user is admin)
+            if (user?.email === 'admin@unistay.com' || user?.email === 'victorbaguma34@gmail.com' || user?.email === 'drilebaroy33@gmail.com') {
+              try {
+                const pending = await confessionService.getPending();
+                if (isSubscribed) {
+                  const mapped = pending.map(c => ({
+                    id: c.id,
+                    content: c.content,
+                    timestamp: c.timestamp,
+                    likes: normalizeCount((c as any).likes),
+                    dislikes: normalizeCount((c as any).dislikes),
+                    comments: [],
+                    userLikeStatus: null
+                  }));
+                  setPendingConfessions(mapped);
+                }
+              } catch (err) {
+                console.error('Failed to load pending confessions:', err);
+              }
+            }
+
+            setIsLoading(false);
         }
       } catch (error) {
         console.error('Failed to initialize app:', error);
@@ -109,6 +264,103 @@ const App = () => {
     return () => {
       isSubscribed = false;
       subscription.unsubscribe();
+    };
+  }, []);
+
+  // Realtime subscriptions for confessions and comments using refs for safe cleanup
+  const confessionsSubRef = React.useRef<(() => void) | null>(null);
+  const commentsSubRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    // subscribe to confessions table changes
+    confessionsSubRef.current = confessionHandler.subscribeConfessions((payload: any) => {
+      try {
+        const ev = payload.eventType || payload.event || payload.type;
+        const record = payload.new || payload.record || payload;
+        if (!record) return;
+
+        // For INSERT: only add if explicitly approved
+        if (ev === 'INSERT' || payload.eventType === 'INSERT') {
+          // Only add to public display if is_approved is explicitly true
+          const isApproved = record.is_approved === true || record.isApproved === true;
+          if (isApproved) {
+            setConfessions(prev => [{
+              id: record.id,
+              content: record.content,
+              timestamp: record.timestamp,
+              likes: normalizeCount(record.likes),
+              dislikes: normalizeCount(record.dislikes),
+              comments: [],
+              userLikeStatus: null
+            }, ...prev]);
+          } else {
+            // Add to pending confessions for admin if not approved
+            setPendingConfessions(prev => [{
+              id: record.id,
+              content: record.content,
+              timestamp: record.timestamp,
+              likes: normalizeCount(record.likes),
+              dislikes: normalizeCount(record.dislikes),
+              comments: [],
+              userLikeStatus: null
+            }, ...prev]);
+          }
+        } else if (ev === 'UPDATE') {
+          // If confession was approved, move from pending to public
+          const isApproved = record.is_approved === true || record.isApproved === true;
+          if (isApproved) {
+            setConfessions(prev => {
+              // Check if already in public
+              if (prev.some(c => c.id === record.id)) {
+                // Just update likes/dislikes
+                return prev.map(c => c.id === record.id ? { ...c, likes: normalizeCount(record.likes), dislikes: normalizeCount(record.dislikes) } : c);
+              } else {
+                // Add newly approved confession to public
+                return [{
+                  id: record.id,
+                  content: record.content,
+                  timestamp: record.timestamp,
+                  likes: normalizeCount(record.likes),
+                  dislikes: normalizeCount(record.dislikes),
+                  comments: [],
+                  userLikeStatus: null
+                }, ...prev];
+              }
+            });
+            // Remove from pending
+            setPendingConfessions(prev => prev.filter(c => c.id !== record.id));
+          } else {
+            // Update likes/dislikes in public confessions only
+            setConfessions(prev => prev.map(c => c.id === record.id ? { ...c, likes: normalizeCount(record.likes), dislikes: normalizeCount(record.dislikes) } : c));
+          }
+        } else if (ev === 'DELETE') {
+          const confId = payload.old?.id || payload.record?.id || record.id;
+          setConfessions(prev => prev.filter(c => c.id !== confId));
+          setPendingConfessions(prev => prev.filter(c => c.id !== confId));
+        }
+      } catch (err) {
+        console.error('Error handling confession realtime payload', err);
+      }
+    });
+
+    // subscribe to comments changes
+    commentsSubRef.current = confessionHandler.subscribeComments((payload: any) => {
+      try {
+        const record = payload.new || payload.record || payload;
+        const ev = payload.eventType || payload.event || payload.type;
+        if (!record) return;
+        if (ev === 'INSERT') {
+          const confessionId = record.confession_id || record.confessionId;
+          setConfessions(prev => prev.map(c => c.id === confessionId ? { ...c, comments: [...(c.comments || []), { id: record.id, content: record.content, userName: record.user_name || record.userName, timestamp: record.timestamp }] } : c));
+        }
+      } catch (err) {
+        console.error('Error handling comment realtime payload', err);
+      }
+    });
+
+    return () => {
+      confessionsSubRef.current && confessionsSubRef.current();
+      commentsSubRef.current && commentsSubRef.current();
     };
   }, []);
 
@@ -157,18 +409,24 @@ const App = () => {
 
   const refreshAllData = async () => {
     // Re-fetch all data to reflect changes made in the admin panel
-    const [hostelsData, newsData, eventsData, jobsData, profilesData] = await Promise.all([
+    const [hostelsData, newsData, eventsData, jobsData, profilesData, contactData, spotlightData, dealsData] = await Promise.all([
         hostelService.getAll(),
         newsService.getAll(),
         eventService.getAll(),
         jobService.getAll(),
-        roommateProfileService.getAll()
+        roommateProfileService.getAll(),
+        contactService.getAll(),
+        spotlightService.getAll(),
+        studentDealsService.getAll()
     ]);
     setHostels(hostelsData);
     setNews(newsData);
     setEvents(eventsData);
     setJobs(jobsData);
     setRoommateProfiles(profilesData);
+    setContactMessages(contactData);
+    setStudentSpotlights(spotlightData);
+    setDeals(dealsData);
   };
 
   // --- Modal Handlers ---
@@ -278,6 +536,11 @@ const App = () => {
                 onNavigateToJobs={() => handleNavigation('jobs')}
                 user={currentUser}
                 onNavigate={handleNavigation}
+                deals={deals}
+                lostItems={lostItems}
+                studentSpotlights={studentSpotlights}
+                confessions={confessions}
+                confessionHandler={confessionHandler}
               />
               <Services services={SERVICES} selectedUniversity={selectedUniversity} />
             </>
@@ -308,7 +571,12 @@ const App = () => {
                 news: { items: news, handler: newsHandler },
                 events: { items: events, handler: eventHandler },
                 jobs: { items: jobs, handler: jobHandler },
-                roommateProfiles: { items: roommateProfiles }
+                roommateProfiles: { items: roommateProfiles },
+                contactMessages: { items: contactMessages, handler: contactHandler },
+                spotlights: { items: studentSpotlights, handler: spotlightHandler },
+                lostFound: { items: lostItems, handler: lostFoundHandler },
+                studentDeals: { items: deals, handler: studentDealsHandler },
+                pendingConfessions: { items: pendingConfessions, handler: confessionHandler }
               }}
               onDataChange={refreshAllData}
             />
@@ -324,6 +592,8 @@ const App = () => {
                   onDataChange={refreshAllData}
                   savedHostels={Array.from(savedHostels).map(id => hostels.find(h => h.id === id)).filter(Boolean) as Hostel[]}
                   onToggleSaveHostel={handleToggleSaveHostel}
+                  confessions={confessions}
+                  confessionHandler={confessionHandler}
               />
           )}
 
@@ -332,12 +602,15 @@ const App = () => {
         {viewingHostel && <HostelDetailModal hostel={viewingHostel} onClose={handleCloseModal} />}
         
         {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'profile' && (
-          <Footer
-            onNavigateToRoommateFinder={() => handleNavigation('roommateFinder')}
-            onNavigateToBlog={() => handleNavigation('blog')}
-            onNavigateToAuth={() => handleNavigation('auth')}
-            user={currentUser}
-          />
+          <>
+            <ContactForm />
+            <Footer
+              onNavigateToRoommateFinder={() => handleNavigation('roommateFinder')}
+              onNavigateToBlog={() => handleNavigation('blog')}
+              onNavigateToAuth={() => handleNavigation('auth')}
+              user={currentUser}
+            />
+          </>
         )}
       </div>
     </NotificationProvider>

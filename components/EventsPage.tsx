@@ -11,6 +11,15 @@ interface EventsPageProps {
 const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
+    // Sort events so the latest posted event appears first. Use event.timestamp if available, otherwise fall back to event.date.
+    const sortedEvents = [...events].sort((a, b) => {
+        const taVal = (a as any).timestamp;
+        const tbVal = (b as any).timestamp;
+        const ta = taVal ? new Date(taVal).getTime() : (a.date ? new Date(a.date).getTime() : 0);
+        const tb = tbVal ? new Date(tbVal).getTime() : (b.date ? new Date(b.date).getTime() : 0);
+        return tb - ta;
+    });
+
     return (
         <div className="bg-gray-100 min-h-screen">
             <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -25,7 +34,7 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
             <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pt-24">
                  {events.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {events.map((event, index) => (
+                        {sortedEvents.map((event, index) => (
                             <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
                                 <div className="relative">
                                     <img src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover" />

@@ -94,15 +94,7 @@ export const authService = {
     return formatUser(data.user);
   },
 
-  async socialLoginRedirect(provider: 'google'): Promise<void> {
-    const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider,
-        options: {
-            redirectTo: window.location.origin, // Redirect back to the app after login
-        },
-    });
-    if (error) throw error;
-  },
+  // social login (OAuth) removed to avoid direct Google provider dependency
 
   async updateProfilePhoto(userId: string, profilePhoto: File): Promise<string> {
     if (!profilePhoto) throw new Error("No photo provided.");

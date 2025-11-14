@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import { University, Hostel } from '../types';
 import { useScrollObserver } from '../hooks/useScrollObserver';
-import { AMENITIES_LIST } from '../constants';
 
 // Reusable Hostel Card Component
 const HostelCard = ({ hostel, onViewHostel, onSaveToggle, isSaved }: { hostel: Hostel; onViewHostel: (hostel: Hostel) => void; onSaveToggle: (hostelId: string) => void; isSaved: boolean; }) => (
@@ -218,31 +217,8 @@ interface FeaturedContentProps {
 }
 
 const FeaturedContent = ({ universities, selectedUniversity, onSelectUniversity, hostels, onViewHostel, savedHostelIds, onToggleSave }: FeaturedContentProps) => {
-  const [filterRef, isFilterVisible] = useScrollObserver<HTMLDivElement>();
-  const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
-
-  const handleToggleAmenity = (amenityName: string) => {
-    setSelectedAmenities(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(amenityName)) {
-        newSet.delete(amenityName);
-      } else {
-        newSet.add(amenityName);
-      }
-      return newSet;
-    });
-  };
-
   const universityHostels = hostels.filter(h => h.universityId === selectedUniversity.id);
   
-  const filteredHostels = selectedAmenities.size > 0
-    ? universityHostels.filter(hostel =>
-        Array.from(selectedAmenities).every(selectedAmenity =>
-          hostel.amenities.some(hostelAmenity => hostelAmenity.name === selectedAmenity)
-        )
-      )
-    : universityHostels;
-
   const recommendedHostels = hostels.filter(h => h.isRecommended);
 
   return (
@@ -250,44 +226,13 @@ const FeaturedContent = ({ universities, selectedUniversity, onSelectUniversity,
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <UniversitySelector universities={universities} selectedUniversity={selectedUniversity} onSelect={onSelectUniversity} />
         
-        {/* Amenity Filter */}
-        <div ref={filterRef} className={`mt-12 transition-all duration-700 delay-100 ${isFilterVisible ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-unistay-navy">Filter by Amenities</h3>
-            {selectedAmenities.size > 0 && (
-              <button
-                onClick={() => setSelectedAmenities(new Set())}
-                className="text-sm font-semibold text-unistay-navy hover:text-unistay-yellow transition-colors"
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {AMENITIES_LIST.map(amenity => (
-              <button
-                key={amenity.name}
-                onClick={() => handleToggleAmenity(amenity.name)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all duration-200 transform hover:scale-105 ${
-                  selectedAmenities.has(amenity.name)
-                    ? 'bg-unistay-navy text-white border-unistay-navy'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-unistay-navy'
-                }`}
-              >
-                <i className={`${amenity.icon} w-4 text-center`}></i>
-                <span>{amenity.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <UniversityHostels 
-          hostels={filteredHostels} 
+          hostels={universityHostels} 
           universityName={selectedUniversity.name} 
           onViewHostel={onViewHostel} 
           savedHostelIds={savedHostelIds}
           onToggleSave={onToggleSave}
-          hasActiveFilter={selectedAmenities.size > 0}
+          hasActiveFilter={false}
           initialHostelCount={universityHostels.length}
         />
         {recommendedHostels.length > 0 && 

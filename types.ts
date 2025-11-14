@@ -115,3 +115,91 @@ export interface Notification {
   timestamp: Date;
   read: boolean;
 }
+
+// Student spotlight nominations
+export interface StudentSpotlight {
+  id: string;
+  name: string;
+  major?: string;
+  bio?: string;
+  imageUrl?: string;
+  universityId?: string;
+  date?: string; // display-friendly date or ISO
+  votes?: number;
+  gender?: 'male' | 'female' | 'other';
+  isWinner?: boolean;
+  interests?: string[];
+}
+
+// Student spotlight votes
+export interface StudentSpotlightVote {
+  id: string;
+  student_spotlight_id: string;
+  user_id: string;
+  timestamp: string;
+}
+
+// Anonymous confessions
+export interface ConfessionComment {
+  id: string;
+  userId?: string;
+  userName?: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface Confession {
+  id: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+  dislikes: number;
+  comments: ConfessionComment[];
+  userLikeStatus?: 'like' | 'dislike' | null; // Track user's interaction
+  isApproved?: boolean; // Moderation status
+  approvedBy?: string; // Admin who approved it
+  approvedAt?: string; // When it was approved
+  rejectionReason?: string; // Reason for rejection (if rejected)
+}
+
+// Lost and Found Items
+export interface LostItem {
+  id: string;
+  title: string;
+  description: string;
+  category: 'lost' | 'found';
+  imageUrl?: string;
+  postedBy: string;
+  phone: string;
+  email?: string;
+  timestamp: string;
+  location?: string;
+}
+
+// Student Deals / Student Discounts
+export interface StudentDeal {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  link?: string; // Optional URL to the deal or merchant
+  universityId?: string; // Optionally limit deal to a university
+  postedBy?: string;
+  phone?: string;
+  active?: boolean; // whether the deal is currently active
+  discount?: number; // Discount percentage (e.g., 20 for 20% OFF)
+  timestamp?: string; // ISO date string
+}
+
+// Contact Form Submissions
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  timestamp: string; // ISO date string
+  read: boolean; // Whether admin has marked as read
+}
+

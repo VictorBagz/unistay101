@@ -58,14 +58,7 @@ export const mockAuthService = {
         return currentUser;
     },
 
-    async socialLogin(provider: 'Google'): Promise<User> {
-        await simulateDelay(700);
-        // Log in as a predefined user for social login simulation
-        const user = MOCK_USERS['sarah@unistay.com'];
-        currentUser = { id: user.id, name: user.name, email: user.email };
-        if (onAuthChangeCallback) onAuthChangeCallback(currentUser);
-        return currentUser;
-    },
+    // socialLogin removed from mock service — social auth flows are no longer supported
 
     async logout(): Promise<void> {
         await simulateDelay(200);

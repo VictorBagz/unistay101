@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Hostel, NewsItem, Event, Job, University, RoommateProfile } from '../types';
+import { Hostel, NewsItem, Event, Job, University, RoommateProfile, StudentSpotlight, LostItem, StudentDeal, ContactSubmission } from '../types';
 import Spinner from './Spinner';
 import { hostelService, newsService, eventService, jobService, roommateProfileService } from '../services/dbService';
+import { contactService } from '../services/contactService';
 import { storageService } from '../services/storageService.ts';
 import { useNotifier } from '../hooks/useNotifier';
 
@@ -91,6 +92,7 @@ interface NewsFormData {
     source: string;
     images: UploadedImage[];
     imageUrl?: string;
+    inlineImages?: UploadedImage[]; // Images to be embedded in the middle of the description
 }
 
 interface NewsFormProps {
@@ -106,15 +108,116 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
         description: item?.description || '',
         source: item?.source || '',
         featured: item?.featured || false,
-        images: item?.imageUrl ? [{ file: null as any, previewUrl: item.imageUrl }] : []
+        images: item?.imageUrl ? [{ file: null as any, previewUrl: item.imageUrl }] : [],
+        inlineImages: []
     });
+    const [descriptionPreview, setDescriptionPreview] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Helper function to apply formatting to selected text
+    const applyFormatting = (format: 'bold' | 'italic' | 'break') => {
+        const textarea = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        
+        if (!selectedText && format !== 'break') {
+            alert('Please select text to format');
+            return;
+        }
+
+        let formattedText = '';
+        if (format === 'bold') {
+            formattedText = `**${selectedText}**`;
+        } else if (format === 'italic') {
+            formattedText = `*${selectedText}*`;
+        } else if (format === 'break') {
+            formattedText = '\n\n';
+        }
+
+        const newDescription = 
+            textarea.value.substring(0, start) + 
+            formattedText + 
+            textarea.value.substring(end);
+
+        setFormData(prev => ({ ...prev, description: newDescription }));
+        
+        // Reset selection
+        setTimeout(() => {
+            textarea.selectionStart = start + formattedText.length;
+            textarea.selectionEnd = start + formattedText.length;
+            textarea.focus();
+        }, 0);
+    };
+
+    // Function to insert an inline image marker at cursor position
+    const insertInlineImage = (imageIndex: number) => {
+        const textarea = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const imageMarker = `\n[IMAGE_${imageIndex}]\n`;
+        
+        const newDescription = 
+            textarea.value.substring(0, start) + 
+            imageMarker + 
+            textarea.value.substring(start);
+
+        setFormData(prev => ({ ...prev, description: newDescription }));
+        
+        setTimeout(() => {
+            textarea.selectionStart = start + imageMarker.length;
+            textarea.selectionEnd = start + imageMarker.length;
+            textarea.focus();
+        }, 0);
+    };
+
+    // Function to parse markdown-like text for preview and inline images
+    const renderMarkdownPreview = (text: string) => {
+        const elements: React.ReactNode[] = [];
+        const parts = text.split(/(\[IMAGE_\d+\])/);
+        
+        parts.forEach((part, idx) => {
+            if (part.match(/\[IMAGE_\d+\]/)) {
+                // Extract image index from marker
+                const imageIndex = parseInt(part.match(/\d+/)?.[0] || '0');
+                if (formData.inlineImages?.[imageIndex]) {
+                    elements.push(
+                        <div key={`inline-img-${idx}`} className="my-4 flex justify-center">
+                            <img 
+                                src={formData.inlineImages[imageIndex].previewUrl} 
+                                alt={`Inline image ${imageIndex + 1}`}
+                                className="max-w-full h-auto rounded-lg shadow-md max-h-96"
+                            />
+                        </div>
+                    );
+                }
+            } else {
+                // Regular text with formatting
+                const paragraphs = part.split('\n\n').filter(p => p.trim());
+                paragraphs.forEach((paragraph, pIdx) => {
+                    if (paragraph.trim()) {
+                        let content = paragraph
+                            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                        elements.push(
+                            <p key={`p-${idx}-${pIdx}`} className="mb-4" dangerouslySetInnerHTML={{ __html: content }} />
+                        );
+                    }
+                });
+            }
+        });
+        
+        return elements.length > 0 ? elements : <p className="text-gray-400">Preview will appear here...</p>;
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isInline: boolean = false) => {
         const files = e.target.files;
         if (!files) return;
 
@@ -122,42 +225,56 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
         Array.from(files).forEach((file: File) => {
             // Create a local URL for preview
             const imageUrl = URL.createObjectURL(file);
-            setFormData(prev => ({
-                ...prev,
-                images: [...prev.images, { file, previewUrl: imageUrl }]
-            }));
+            if (isInline) {
+                // Add to inline images
+                setFormData(prev => ({
+                    ...prev,
+                    inlineImages: [...(prev.inlineImages || []), { file, previewUrl: imageUrl }]
+                }));
+            } else {
+                // Add to main images (featured image)
+                setFormData(prev => ({
+                    ...prev,
+                    images: [...prev.images, { file, previewUrl: imageUrl }]
+                }));
+            }
         });
     };
 
-    const removeImage = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
+    const removeImage = (index: number, isInline: boolean = false) => {
+        if (isInline) {
+            setFormData(prev => ({
+                ...prev,
+                inlineImages: (prev.inlineImages || []).filter((_, i) => i !== index)
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                images: prev.images.filter((_, i) => i !== index)
+            }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (formData.images.length === 0) {
-            alert('Please upload at least one image');
+            alert('Please upload at least one featured image');
             return;
         }
 
         try {
-            // Identify new images that need uploading
+            // Upload featured images (main image)
             const newImages = formData.images.filter(img => img.file);
             let imageUrl = item?.imageUrl;
 
-            // Only upload if we have new images
             if (newImages.length > 0) {
                 const files = newImages.map(img => img.file);
                 const timestamp = new Date().getTime();
                 const newsFolder = `${item?.id || timestamp}`;
                 const uploadedUrls = await storageService.uploadMultipleImages(files, 'news', newsFolder);
-                imageUrl = uploadedUrls[0]; // Use the first new image
+                imageUrl = uploadedUrls[0];
 
-                // Delete old image if we're replacing it
                 if (item?.id && item.imageUrl) {
                     try {
                         await storageService.deleteImage(item.imageUrl, 'news');
@@ -167,12 +284,31 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
                 }
             }
 
-            // Submit with image URL (either existing or new)
+            // Upload inline images and build description with image URLs
+            let finalDescription = formData.description;
+            if (formData.inlineImages && formData.inlineImages.length > 0) {
+                const newInlineImages = formData.inlineImages.filter(img => img.file);
+                if (newInlineImages.length > 0) {
+                    const inlineFiles = newInlineImages.map(img => img.file);
+                    const timestamp = new Date().getTime();
+                    const newsFolder = `${item?.id || timestamp}`;
+                    const uploadedInlineUrls = await storageService.uploadMultipleImages(inlineFiles, 'news', newsFolder);
+                    
+                    // Replace image markers with actual URLs
+                    uploadedInlineUrls.forEach((url, idx) => {
+                        finalDescription = finalDescription.replace(`[IMAGE_${idx}]`, `[INLINE_IMAGE:${url}]`);
+                    });
+                }
+            }
+
+            // Submit with image URL and description with inline images
             onSubmit({
                 ...formData,
+                description: finalDescription,
                 imageUrl,
-                timestamp: new Date().toISOString(), // Add current timestamp
-                images: undefined // Remove the temporary images array
+                timestamp: new Date().toISOString(),
+                images: undefined,
+                inlineImages: undefined
             });
         } catch (error) {
             console.error('Error uploading news images:', error);
@@ -182,31 +318,142 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
-            <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required />
             
-            {/* Image Upload Section */}
-            <div className="space-y-4">
+            {/* Description with Formatting Tools */}
+            <div className="space-y-2">
+                <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded border border-gray-300">
+                    <button 
+                        type="button" 
+                        onClick={() => applyFormatting('bold')}
+                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors"
+                        title="Make selected text bold (Ctrl+B)"
+                    >
+                        <i className="fas fa-bold"></i> Bold
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={() => applyFormatting('italic')}
+                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors"
+                        title="Make selected text italic (Ctrl+I)"
+                    >
+                        <i className="fas fa-italic"></i> Italic
+                    </button>
+                    <div className="border-l border-gray-300 h-6"></div>
+                    <button 
+                        type="button" 
+                        onClick={() => applyFormatting('break')}
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                        title="Insert a line break"
+                    >
+                        <i className="fas fa-paragraph"></i> New Section
+                    </button>
+                    <div className="ml-auto text-xs text-gray-500">
+                        Use **text** for bold, *text* for italic
+                    </div>
+                </div>
+                <button 
+                    type="button"
+                    onClick={() => setDescriptionPreview(!descriptionPreview)}
+                    className="text-sm text-unistay-yellow hover:text-unistay-navy transition-colors"
+                >
+                    {descriptionPreview ? '✓ Preview ON' : '○ Preview OFF'}
+                </button>
+            </div>
+
+            <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description (use **text** for bold, *text* for italic)" required />
+            
+            {descriptionPreview && (
+                <div className="p-4 bg-white border border-gray-300 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 mb-3">Preview</h3>
+                    <div className="text-gray-700 space-y-2">
+                        {renderMarkdownPreview(formData.description)}
+                    </div>
+                </div>
+            )}
+            
+            {/* Inline Images Section */}
+            <div className="space-y-4 p-4 bg-white border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-700">
+                        <i className="fas fa-images mr-2 text-blue-500"></i>Inline Images (Optional)
+                    </h3>
+                    <span className="text-xs text-gray-500">Add images to appear in the middle of your article</span>
+                </div>
+                
                 <Input 
                     type="file" 
                     accept="image/*"
-                    onChange={handleImageUpload}
+                    multiple
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="w-full"
+                />
+                
+                {/* Inline Image Preview Grid */}
+                {formData.inlineImages && formData.inlineImages.length > 0 && (
+                    <div className="space-y-3">
+                        <p className="text-sm text-gray-600">Click on an image to insert it at cursor position:</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {formData.inlineImages.map((img, index) => (
+                                <div key={index} className="relative group cursor-pointer">
+                                    <div 
+                                        onClick={() => insertInlineImage(index)}
+                                        className="relative h-32 overflow-hidden rounded-lg group hover:opacity-75 transition-opacity"
+                                    >
+                                        <img
+                                            src={img.previewUrl}
+                                            alt={`Inline ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all">
+                                            <span className="text-white font-semibold text-sm bg-unistay-navy bg-opacity-70 px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                                Click to Insert
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(index, true)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                                        title="Remove this image"
+                                    >
+                                        <i className="fas fa-times text-xs" />
+                                    </button>
+                                    <div className="mt-1 text-xs text-center text-gray-600">
+                                        Image {index + 1}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+            
+            {/* Featured Image Upload Section */}
+            <div className="space-y-4 p-4 bg-white border border-gray-300 rounded-lg">
+                <h3 className="font-semibold text-gray-700">
+                    <i className="fas fa-image mr-2 text-unistay-yellow"></i>Featured Image (Required)
+                </h3>
+                <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, false)}
                     className="w-full"
                     required={formData.images.length === 0}
                 />
                 
-                {/* Image Preview Grid */}
+                {/* Featured Image Preview Grid */}
                 {formData.images.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {formData.images.map((img, index) => (
                             <div key={index} className="relative group">
                                 <img
                                     src={img.previewUrl}
-                                    alt={`Preview ${index + 1}`}
+                                    alt={`Featured ${index + 1}`}
                                     className="w-full h-32 object-cover rounded-lg"
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => removeImage(index)}
+                                    onClick={() => removeImage(index, false)}
                                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <i className="fas fa-times" />
@@ -632,6 +879,387 @@ const JobForm: React.FC<JobFormProps> = ({ item, onSubmit, onCancel, isSubmittin
     );
 };
 
+// --- Deals Form ---
+interface DealFormData {
+    id?: string;
+    title: string;
+    description?: string;
+    link?: string;
+    imageUrl?: string;
+    active?: boolean;
+    discount?: number; // Percentage discount (e.g., 20 for 20% OFF)
+}
+
+interface DealFormProps {
+    item?: DealFormData;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+}
+
+const DealsForm: React.FC<DealFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
+    const [formData, setFormData] = useState<DealFormData>({
+        title: item?.title || '',
+        description: item?.description || '',
+        link: item?.link || '',
+        imageUrl: item?.imageUrl || '',
+        active: item?.active ?? true,
+        discount: item?.discount || 0,
+    });
+    const [imageFile, setImageFile] = useState<File | null>(null);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target as HTMLInputElement;
+        if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+        } else if (type === 'number') {
+            setFormData(prev => ({ ...prev, [name]: value ? parseInt(value, 10) : 0 }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImageFile(file);
+        const preview = URL.createObjectURL(file);
+        setFormData(prev => ({ ...prev, imageUrl: preview }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            let imageUrl = formData.imageUrl;
+            if (imageFile) {
+                const uploaded = await storageService.uploadMultipleImages([imageFile], 'news', `${item?.id || Date.now()}`);
+                imageUrl = uploaded[0];
+            }
+            onSubmit({ ...formData, imageUrl, timestamp: new Date().toISOString() });
+        } catch (err) {
+            console.error('Failed to upload deal image', err);
+            alert('Failed to upload image');
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <Input name="title" value={formData.title} onChange={handleChange} placeholder="Title" required />
+            <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Short description" />
+            <Input name="link" value={formData.link} onChange={handleChange} placeholder="External link (optional)" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Percentage (%)</label>
+                    <Input 
+                        type="number" 
+                        name="discount" 
+                        min="0" 
+                        max="100" 
+                        value={formData.discount || ''} 
+                        onChange={handleChange} 
+                        placeholder="e.g., 20" 
+                    />
+                </div>
+            </div>
+
+            <div>
+                <Input type="file" accept="image/*" onChange={handleImageUpload} />
+                {formData.imageUrl && <img src={formData.imageUrl} alt="preview" className="w-32 h-32 object-cover rounded-md mt-2" />}
+            </div>
+            <div className="flex items-center gap-2">
+                <input id="active" name="active" type="checkbox" checked={!!formData.active} onChange={handleChange} className="h-4 w-4 text-unistay-yellow" />
+                <label htmlFor="active" className="text-sm">Active</label>
+            </div>
+            <div className="flex gap-2 justify-end">
+                <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
+                <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Add'} Deal</Button>
+            </div>
+        </form>
+    );
+};
+
+// --- Spotlight Form ---
+interface SpotlightFormData {
+    id?: string;
+    name: string;
+    major?: string;
+    bio?: string;
+    imageUrl?: string;
+    gender?: 'male' | 'female' | 'other';
+    universityId?: string;
+}
+
+interface SpotlightFormProps {
+    item?: SpotlightFormData;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+    universities?: Array<{ id: string; name: string }>;
+}
+
+const SpotlightForm: React.FC<SpotlightFormProps> = ({ item, onSubmit, onCancel, isSubmitting, universities = [] }) => {
+    const [formData, setFormData] = useState<SpotlightFormData>({
+        name: item?.name || '',
+        major: item?.major || '',
+        bio: item?.bio || '',
+        imageUrl: item?.imageUrl || '',
+        gender: item?.gender || 'other',
+        universityId: item?.universityId || (universities.length > 0 ? universities[0].id : '')
+    });
+    const [imageFile, setImageFile] = useState<File | null>(null);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        const file = files[0];
+        setImageFile(file);
+        const preview = URL.createObjectURL(file);
+        setFormData(prev => ({ ...prev, imageUrl: preview }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            let imageUrl = formData.imageUrl;
+            if (imageFile) {
+                // reuse 'news' bucket for spotlight images to avoid expanding storage type union
+                const uploaded = await storageService.uploadMultipleImages([imageFile], 'news', `${item?.id || Date.now()}`);
+                imageUrl = uploaded[0];
+            }
+
+            onSubmit({
+                ...formData,
+                imageUrl,
+                date: new Date().toLocaleDateString(),
+                votes: (item && item.votes) || 0,
+            });
+        } catch (err) {
+            console.error('Failed to upload spotlight image', err);
+            alert('Failed to upload image.');
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <Input name="name" value={formData.name} onChange={handleChange} placeholder="Full name" required />
+            <Input name="major" value={formData.major} onChange={handleChange} placeholder="Major / Course" />
+            
+            {/* University Selector */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">University</label>
+                <Select 
+                    name="universityId" 
+                    value={formData.universityId || ''} 
+                    onChange={handleChange}
+                    required
+                >
+                    <option value="">Select a university</option>
+                    {universities?.map(uni => (
+                        <option key={uni.id} value={uni.id}>{uni.name}</option>
+                    ))}
+                </Select>
+            </div>
+
+            <Textarea name="bio" value={formData.bio} onChange={handleChange} placeholder="Short bio / reason for nomination" />
+
+            {/* Gender Selector */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Gender</label>
+                <div className="flex gap-6">
+                    {(['female', 'male', 'other'] as const).map(option => (
+                        <label key={option} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="gender"
+                                value={option}
+                                checked={formData.gender === option}
+                                onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as any }))}
+                                className="h-4 w-4 text-unistay-yellow focus:ring-unistay-yellow border-gray-300"
+                            />
+                            <span className="text-sm text-gray-700 capitalize">
+                                {option === 'female' ? '👩 Woman Crush Wednesday' : option === 'male' ? '👨 Man Crush Monday' : 'Other'}
+                            </span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            <div>
+                <Input type="file" accept="image/*" onChange={handleImageUpload} />
+                {formData.imageUrl && (
+                    <img src={formData.imageUrl} alt="preview" className="w-32 h-32 object-cover rounded-md mt-2" />
+                )}
+            </div>
+
+            <div className="flex gap-2 justify-end">
+                <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
+                <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Nominate'}</Button>
+            </div>
+        </form>
+    );
+};
+
+interface LostFoundFormData {
+    id?: string;
+    title: string;
+    description: string;
+    category: 'lost' | 'found';
+    imageUrl: string;
+    postedBy: string;
+    phone: string;
+    email?: string;
+    location?: string;
+}
+
+interface LostFoundFormProps {
+    item?: LostFoundFormData;
+    onSubmit: (data: LostFoundFormData) => void;
+    onCancel: () => void;
+    isSubmitting: boolean;
+}
+
+const LostFoundForm: React.FC<LostFoundFormProps> = ({ item, onSubmit, onCancel, isSubmitting }) => {
+    const [formData, setFormData] = React.useState<LostFoundFormData>(
+        item || {
+            title: '',
+            description: '',
+            category: 'lost',
+            imageUrl: '',
+            postedBy: '',
+            phone: '',
+            email: '',
+            location: ''
+        }
+    );
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.title.trim() || !formData.description.trim() || !formData.postedBy.trim() || !formData.phone.trim() || !formData.imageUrl) {
+            alert('Please fill all required fields');
+            return;
+        }
+        onSubmit(formData);
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const uploadedImages = await storageService.uploadMultipleImages([file], 'news', 'lostfound');
+            if (uploadedImages.length > 0) {
+                setFormData(prev => ({ ...prev, imageUrl: uploadedImages[0] }));
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            alert('Failed to upload image');
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <Input
+                    label="Title *"
+                    placeholder="e.g., Blue Backpack Lost in Library"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                />
+            </div>
+
+            <div>
+                <Textarea
+                    label="Description *"
+                    placeholder="Describe the item in detail..."
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={4}
+                />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                    <div className="space-y-2">
+                        {(['lost', 'found'] as const).map((option) => (
+                            <label key={option} className="flex items-center gap-2">
+                                <input
+                                    type="radio"
+                                    name="category"
+                                    value={option}
+                                    checked={formData.category === option}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as 'lost' | 'found' }))}
+                                    className="h-4 w-4 text-unistay-yellow focus:ring-unistay-yellow border-gray-300"
+                                />
+                                <span className="text-sm text-gray-700 capitalize">
+                                    {option === 'lost' ? '🔍 Lost Item' : '📦 Found Item'}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <div>
+                    <Input
+                        label="Location (Optional)"
+                        placeholder="e.g., Library, Near Gate A"
+                        value={formData.location || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <Input
+                        label="Contact Name *"
+                        placeholder="Your name"
+                        value={formData.postedBy}
+                        onChange={(e) => setFormData(prev => ({ ...prev, postedBy: e.target.value }))}
+                    />
+                </div>
+
+                <div>
+                    <Input
+                        label="Phone Number *"
+                        placeholder="e.g., +256 700 000000"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    />
+                </div>
+            </div>
+
+            <div>
+                <Input
+                    label="Email (Optional)"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={formData.email || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+            </div>
+
+            <div>
+                <Input type="file" accept="image/*" onChange={handleImageUpload} />
+                {formData.imageUrl && (
+                    <img src={formData.imageUrl} alt="preview" className="w-32 h-32 object-cover rounded-md mt-2" />
+                )}
+            </div>
+
+            <div className="flex gap-2 justify-end">
+                <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</Button>
+                <Button type="submit" loading={isSubmitting}>{item ? 'Update' : 'Post'}</Button>
+            </div>
+        </form>
+    );
+};
+
 interface HostelFormData {
     id?: string;
     name: string;
@@ -905,6 +1533,82 @@ const HostelForm: React.FC<HostelFormProps> = ({ item, onSubmit, onCancel, unive
     );
 };
 
+// --- Contact Messages Form (Read-Only Display) ---
+interface ContactMessagesFormProps {
+    item?: ContactSubmission;
+    onSubmit?: (data: any) => void;
+    onCancel: () => void;
+    isSubmitting?: boolean;
+}
+
+const ContactMessagesForm: React.FC<ContactMessagesFormProps> = ({ item, onCancel, isSubmitting = false }) => {
+    if (!item) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-gray-500">Select a message to view details</p>
+            </div>
+        );
+    }
+
+    const formatDate = (dateString: string) => {
+        try {
+            return new Date(dateString).toLocaleString();
+        } catch {
+            return dateString;
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-700">
+                    <strong>Note:</strong> Contact messages are read-only. Use the delete button to remove messages.
+                </p>
+            </div>
+
+            {/* Sender header */}
+            <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-unistay-navy text-white flex items-center justify-center font-bold text-lg">
+                    {item.name ? item.name.split(' ').map(n => n[0]).slice(0,2).join('') : 'U'}
+                </div>
+                <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-unistay-navy">{item.name}</h3>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            item.read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>{item.read ? '✓ Read' : '○ Unread'}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                        <a href={`mailto:${item.email}`} className="hover:underline">{item.email}</a>
+                        <span className="mx-2">•</span>
+                        <a href={`tel:${item.phone}`} className="hover:underline">{item.phone}</a>
+                    </div>
+                </div>
+            </div>
+
+            {/* Message area (messenger-style) */}
+            <div className="flex flex-col gap-4">
+                <div className="max-w-3xl">
+                    <div className="text-sm text-gray-500 mb-2">Subject</div>
+                    <div className="mb-4 text-base font-medium text-unistay-navy">{item.subject}</div>
+
+                    <div className="flex">
+                        <div className="rounded-lg bg-gray-100 p-4 shadow-sm max-w-3xl text-gray-800">
+                            <p className="whitespace-pre-wrap">{item.message}</p>
+                        </div>
+                    </div>
+
+                    <div className="text-xs text-gray-500 mt-2">Submitted: {formatDate(item.timestamp)}</div>
+                </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button onClick={onCancel} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Close</Button>
+            </div>
+        </div>
+    );
+};
+
 // --- Content Manager (Generic) ---
 
 function ContentManager({ title, items, handler, columns, FormComponent, universities = [], onDataChange }) {
@@ -992,21 +1696,23 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
                     </thead>
                     <tbody>
                         {items.map(item => (
-                            <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                            <tr key={item.id} onClick={() => handleEdit(item)} className="border-b last:border-b-0 hover:bg-gray-50 cursor-pointer">
                                 {columns.map(col => (
                                    <td key={col.accessor} className="p-4 text-sm text-gray-700 align-top">
                                        {typeof item[col.accessor] === 'boolean' ? 
                                            (item[col.accessor] ? 
                                                <span className="flex items-center justify-center"><i className="fas fa-star text-unistay-yellow"></i></span> :
                                                <span className="flex items-center justify-center"><i className="fas fa-minus text-gray-300"></i></span>) :
-                                           item[col.accessor]
+                                           col.accessor === 'discount' && item[col.accessor] ? 
+                                               `${item[col.accessor]}% OFF` :
+                                               item[col.accessor]
                                        }
                                    </td>
                                 ))}
                                 <td className="p-4 text-right">
                                     <div className="flex gap-3 justify-end">
-                                        <ActionButton icon="fa-pencil-alt" onClick={() => handleEdit(item)} />
-                                        <ActionButton icon="fa-trash" onClick={() => handleDelete(item.id)} colorClass="text-red-500 hover:text-red-700" loading={deletingId === item.id} />
+                                        <ActionButton icon="fa-pencil-alt" onClick={(e) => { e.stopPropagation(); handleEdit(item); }} />
+                                        <ActionButton icon="fa-trash" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} colorClass="text-red-500 hover:text-red-700" loading={deletingId === item.id} />
                                     </div>
                                 </td>
                             </tr>
@@ -1018,9 +1724,90 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
     );
 }
 
+// --- Confessions Moderation Component ---
+const ConfessionsModerationPanel = ({ items = [], handler, onDataChange }: { items: any[]; handler: any; onDataChange?: () => void }) => {
+    const [loading, setLoading] = React.useState<string | null>(null);
+    const { notify } = useNotifier();
+
+    const handleApprove = async (confessionId: string, adminEmail: string) => {
+        setLoading(confessionId);
+        try {
+            await handler.approve(confessionId, adminEmail);
+            notify('Confession approved!', 'success');
+            onDataChange?.();
+        } catch (error) {
+            console.error('Error approving confession:', error);
+            notify('Failed to approve confession', 'error');
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    const handleReject = async (confessionId: string) => {
+        setLoading(confessionId);
+        try {
+            await handler.reject(confessionId);
+            notify('Confession rejected', 'success');
+            onDataChange?.();
+        } catch (error) {
+            console.error('Error rejecting confession:', error);
+            notify('Failed to reject confession', 'error');
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    if (items.length === 0) {
+        return (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <i className="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">All Clear!</h2>
+                <p className="text-gray-600">No pending confessions to moderate.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Pending Confessions ({items.length})</h2>
+            {items.map((confession) => (
+                <div key={confession.id} className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                    <div className="mb-4">
+                        <p className="text-gray-800 italic text-lg mb-3">{confession.content}</p>
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                            <span>
+                                <i className="fas fa-clock mr-2"></i>
+                                {new Date(confession.timestamp).toLocaleString()}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                        <button
+                            onClick={() => handleApprove(confession.id, 'admin@unistay.com')}
+                            disabled={loading === confession.id}
+                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
+                        >
+                            {loading === confession.id ? <Spinner color="white" size="sm" /> : <i className="fas fa-check"></i>}
+                            Approve
+                        </button>
+                        <button
+                            onClick={() => handleReject(confession.id)}
+                            disabled={loading === confession.id}
+                            className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
+                        >
+                            {loading === confession.id ? <Spinner color="white" size="sm" /> : <i className="fas fa-times"></i>}
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 // --- Main Dashboard Component ---
 
-type Section = 'Dashboard' | 'Hostels' | 'News' | 'Events' | 'Jobs';
+type Section = 'Dashboard' | 'Hostels' | 'News' | 'Events' | 'Jobs' | 'Deals' | 'Spotlights' | 'LostFound' | 'ContactMessages' | 'Confessions';
 
 interface AdminDashboardProps {
     onExitAdminMode: () => void;
@@ -1030,6 +1817,11 @@ interface AdminDashboardProps {
         events: { items: Event[]; handler: any };
         jobs: { items: Job[]; handler: any };
         roommateProfiles: { items: RoommateProfile[] };
+        contactMessages?: { items: ContactSubmission[]; handler: any };
+        spotlights?: { items: StudentSpotlight[]; handler: any };
+        lostFound?: { items: LostItem[]; handler: any };
+        studentDeals?: { items: StudentDeal[]; handler: any };
+        pendingConfessions?: { items: any[]; handler: any };
     };
     onDataChange: () => void;
 }
@@ -1117,6 +1909,71 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
             ],
             FormComponent: JobForm,
         },
+        Deals: {
+            title: 'Manage Student Deals',
+            items: content.studentDeals?.items || [],
+            handler: content.studentDeals?.handler,
+            columns: [
+                { header: 'Title', accessor: 'title' },
+                { header: 'Discount', accessor: 'discount' },
+                { header: 'Active', accessor: 'active' },
+                { header: 'Link', accessor: 'link' },
+            ],
+            FormComponent: DealsForm,
+            universities: content.hostels.universities,
+        },
+        Spotlights: {
+            title: 'Manage Student Spotlights',
+            items: content.spotlights?.items || [],
+            handler: content.spotlights?.handler,
+            columns: [
+                { header: 'Name', accessor: 'name' },
+                { header: 'Major', accessor: 'major' },
+                { header: 'University', accessor: 'universityId' },
+                { header: 'Gender', accessor: 'gender' },
+                { header: 'Votes', accessor: 'votes' },
+            ],
+            FormComponent: SpotlightForm,
+            universities: content.hostels.universities,
+        },
+        LostFound: {
+            title: 'Manage Lost & Found',
+            items: content.lostFound?.items || [],
+            handler: content.lostFound?.handler,
+            columns: [
+                { header: 'Title', accessor: 'title' },
+                { header: 'Category', accessor: 'category' },
+                { header: 'Posted By', accessor: 'postedBy' },
+                { header: 'Phone', accessor: 'phone' },
+                { header: 'Date', accessor: 'timestamp' },
+            ],
+            FormComponent: LostFoundForm,
+        },
+        ContactMessages: {
+            title: 'Contact Form Submissions',
+            items: content.contactMessages?.items || [],
+            handler: content.contactMessages?.handler,
+            columns: [
+                { header: 'Name', accessor: 'name' },
+                { header: 'Email', accessor: 'email' },
+                { header: 'Subject', accessor: 'subject' },
+                { header: 'Status', accessor: 'read' },
+                { header: 'Date', accessor: 'timestamp' },
+            ],
+            FormComponent: ContactMessagesForm,
+        },
+        Confessions: {
+            title: 'Moderate Confessions',
+            items: content.pendingConfessions?.items || [],
+            handler: content.pendingConfessions?.handler,
+            columns: [
+                { header: 'Content', accessor: 'content' },
+                { header: 'Submitted', accessor: 'timestamp' },
+                { header: 'Actions', accessor: 'actions' },
+            ],
+            FormComponent: null, // No form for confessions
+            isPendingView: true,
+        },
     };
     
     const icons = {
@@ -1125,37 +1982,46 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
         News: 'fa-newspaper',
         Events: 'fa-calendar-alt',
         Jobs: 'fa-briefcase',
+        Deals: 'fa-tags',
+        Spotlights: 'fa-star',
+        LostFound: 'fa-search',
+        ContactMessages: 'fa-envelope',
+        Confessions: 'fa-user-secret',
     };
     
-    const navItems: Section[] = ['Dashboard', 'Hostels', 'News', 'Events', 'Jobs'];
+    const navItems: Section[] = ['Dashboard', 'Hostels', 'News', 'Events', 'Jobs', 'Deals', 'Spotlights', 'LostFound', 'ContactMessages', 'Confessions'];
 
     return (
         <div className="flex min-h-screen bg-gray-100">
-            <aside className="w-64 bg-unistay-navy text-white flex flex-col p-4">
-                <div className="text-center py-4 mb-6">
-                    <h1 className="text-3xl font-extrabold">Admin</h1>
+            {/* Make sidebar narrow on small screens and expand on md+ */}
+            <aside className="w-16 md:w-64 bg-unistay-navy text-white flex flex-col p-3 md:p-4">
+                <div className="text-center py-3 mb-6">
+                    {/* show small icon on narrow screens, full label on md+ */}
+                    <i className="fas fa-user-shield text-xl md:hidden" aria-hidden="true"></i>
+                    <h1 className="hidden md:block text-3xl font-extrabold">Admin</h1>
                 </div>
                 <nav className="flex-grow">
                     {navItems.map(section => (
                         <button
                             key={section}
                             onClick={() => setActiveSection(section)}
-                            className={`w-full text-left px-4 py-3 my-1 rounded-lg transition-colors flex items-center gap-3 ${
+                            className={`w-full text-left py-3 my-1 rounded-lg transition-colors flex items-center gap-3 px-2 md:px-4 justify-center md:justify-start ${
                                 activeSection === section ? 'bg-unistay-yellow text-unistay-navy font-bold' : 'hover:bg-white/10'
                             }`}
                         >
-                            <i className={`fas ${icons[section]} w-5`}></i>
-                            {section}
+                            <i className={`fas ${icons[section]} w-5 text-center`}></i>
+                            {/* hide label on small screens to save space */}
+                            <span className="hidden md:inline">{section}</span>
                         </button>
                     ))}
                 </nav>
                 <div className="pt-4 border-t border-white/20">
                     <button
                         onClick={onExitAdminMode}
-                        className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-3"
+                        className="w-full text-left py-3 my-1 rounded-lg transition-colors flex items-center gap-3 px-2 md:px-4 justify-center md:justify-start hover:bg-white/10"
                     >
-                        <i className="fas fa-arrow-left w-5"></i>
-                        Back to Site
+                        <i className="fas fa-arrow-left w-5 text-center"></i>
+                        <span className="hidden md:inline">Back to Site</span>
                     </button>
                 </div>
             </aside>
@@ -1165,6 +2031,12 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
                         stats={stats} 
                         isLoading={isLoadingStats} 
                      />
+                ) : activeSection === 'Confessions' ? (
+                    <ConfessionsModerationPanel 
+                        items={sections[activeSection].items} 
+                        handler={sections[activeSection].handler}
+                        onDataChange={onDataChange}
+                    />
                 ) : (
                     <ContentManager {...sections[activeSection]} onDataChange={onDataChange} />
                 )}

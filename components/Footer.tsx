@@ -65,7 +65,7 @@ const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth
         { icon: 'fab fa-facebook-f', href: '#', name: 'Facebook' },
         { icon: 'fab fa-twitter', href: '#', name: 'Twitter' },
         { icon: 'fab fa-instagram', href: '#', name: 'Instagram' },
-        { icon: 'fab fa-linkedin-in', href: '#', name: 'LinkedIn' }
+        { icon: 'fab fa-whatsapp', href: '#', name: 'WhatsApp' }
     ];
 
     return (

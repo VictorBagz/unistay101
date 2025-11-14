@@ -21,13 +21,39 @@
       }
     </script>
     <style>
+      html {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      html::-webkit-scrollbar {
+        display: none;
+      }
       body {
         background-color: #ffff8c;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
       }
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
       .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
@@ -40,21 +66,21 @@
 
       /* Basic prose styles to replace @tailwindcss/typography */
       .gemini-guide h2 {
-        font-size: 1.5rem; /* text-2xl */
+        font-size: 1.5rem;
         line-height: 2rem;
-        font-weight: 700; /* font-bold */
-        color: #0A2540; /* unistay-navy */
-        margin-bottom: 0.75rem; /* mb-3 */
+        font-weight: 700;
+        color: #0A2540;
+        margin-bottom: 0.75rem;
       }
       .gemini-guide h3 {
-        font-size: 1.25rem; /* text-xl */
+        font-size: 1.25rem;
         line-height: 1.75rem;
-        font-weight: 600; /* font-semibold */
-        color: #0A2540; /* unistay-navy */
-        margin-bottom: 0.5rem; /* mb-2 */
+        font-weight: 600;
+        color: #0A2540;
+        margin-bottom: 0.5rem;
       }
       .gemini-guide p {
-        margin-bottom: 1rem; /* mb-4 */
+        margin-bottom: 1rem;
       }
       .gemini-guide ul {
         list-style-type: disc;
@@ -134,11 +160,10 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/assets/index-DkU24gNu.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/react-vendor-CSi47VP1.js">
+  <script type="module" crossorigin src="/assets/index-zm3Jfj9J.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/react-vendor-ByR4cYxz.js">
 </head>
 <body>
     <div id="root"></div>
-
 </body>
 </html>
