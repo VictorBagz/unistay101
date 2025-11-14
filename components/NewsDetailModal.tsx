@@ -23,20 +23,51 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
 
     // Function to parse markdown-like text to HTML and handle inline images
     const renderMarkdownContent = (text: string) => {
-        // Split by inline image markers
-        const parts = text.split(/(\[INLINE_IMAGE:[^\]]+\])/);
-        return parts.map((part) => {
-            if (part.startsWith('[INLINE_IMAGE:')) {
-                // Extract the image URL
-                const imageUrl = part.slice(14, -1); // Remove [INLINE_IMAGE: and ]
-                return `</p><div class="my-4 flex justify-center"><img src="${imageUrl}" alt="Article image" class="max-w-full h-auto rounded-lg shadow-md max-h-96" /></div><p>`;
-            } else {
-                // Regular text with formatting
-                return part
-                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        if (!text) return '';
+
+        // Split text into paragraphs first (double newline indicates paragraph break)
+        const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+        
+        const result: string[] = [];
+        
+        paragraphs.forEach((paragraph) => {
+            // Split each paragraph by inline image markers
+            const parts = paragraph.split(/(\[INLINE_IMAGE:[^\]]+\])/);
+            let paragraphHtml = '';
+            
+            parts.forEach((part, idx) => {
+                if (part.startsWith('[INLINE_IMAGE:')) {
+                    // Extract the image URL
+                    const imageUrl = part.slice(14, -1); // Remove [INLINE_IMAGE: and ]
+                    // Close paragraph, add image, then reopen paragraph
+                    if (paragraphHtml.trim()) {
+                        result.push(`<p class="text-gray-600 leading-relaxed mb-4">${paragraphHtml}</p>`);
+                        paragraphHtml = '';
+                    }
+                    result.push(`<div class="my-6 flex justify-center"><img src="${imageUrl}" alt="Article image" class="max-w-full h-auto rounded-lg shadow-md max-h-96" /></div>`);
+                } else if (part.trim()) {
+                    // Regular text with formatting
+                    let formattedPart = part
+                        // Escape HTML special characters first (but not already formatted content)
+                        .replace(/([^>])</g, '$1&lt;')
+                        .replace(/([^>])>/g, '$1&gt;')
+                        // Apply bold formatting: **text** -> <strong>text</strong>
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                        // Apply italic formatting: *text* -> <em>text</em>
+                        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                        // Handle newlines within paragraph -> <br>
+                        .replace(/\n/g, '<br class="mb-2" />');
+                    paragraphHtml += formattedPart;
+                }
+            });
+            
+            // Add any remaining paragraph content
+            if (paragraphHtml.trim()) {
+                result.push(`<p class="text-gray-600 leading-relaxed mb-4">${paragraphHtml}</p>`);
             }
-        }).join('');
+        });
+        
+        return result.join('');
     };
 
     const handleShare = (platform: 'twitter' | 'facebook' | 'linkedin' | 'whatsapp') => {
@@ -85,11 +116,11 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
                         <p>Source: {news.source}</p>
                     </div>
                     <h2 className="text-3xl font-bold text-unistay-navy mb-6">{news.title}</h2>
-                    <div className="prose max-w-none">
+                    <div className="prose prose-lg max-w-none">
                         <div 
-                            className="text-gray-600 leading-relaxed space-y-4"
+                            className="space-y-4"
                             dangerouslySetInnerHTML={{ 
-                                __html: `<p>${renderMarkdownContent(news.description)}</p>` 
+                                __html: renderMarkdownContent(news.description)
                             }}
                         />
                     </div>

@@ -6,10 +6,13 @@ interface FooterProps {
     onNavigateToRoommateFinder: () => void;
     onNavigateToBlog: () => void;
     onNavigateToAuth: () => void;
+    onNavigateToHostels?: () => void;
+    onScrollToContact?: () => void;
+    onScrollToDeals?: () => void;
     user: User | null;
 }
 
-const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth, user }: FooterProps) => {
+const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth, onNavigateToHostels, onScrollToContact, onScrollToDeals, user }: FooterProps) => {
     const [isVisible, setIsVisible] = useState(false);
 
     const toggleVisibility = () => {
@@ -37,20 +40,32 @@ const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth
     };
     
     const handleStudentDealsClick = () => {
-        alert('The Student Deals feature is coming soon!');
+        if (user) {
+            onScrollToDeals?.();
+        } else {
+            onNavigateToAuth();
+        }
+    };
+
+    const handleAppStoreClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        alert('📱 Coming Soon!\n\nOur mobile app is still under construction and will be available soon on the App Store. Thank you for your patience!');
+    };
+
+    const handleGooglePlayClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        alert('📱 Coming Soon!\n\nOur mobile app is still under construction and will be available soon on Google Play. Thank you for your patience!');
     };
 
     const links = {
         'UniStay': [
-            { text: 'Hostels', action: scrollToTop },
-            { text: 'About Us', href: '#' },
-            { text: 'Contact', href: '#' },
+            { text: 'Hostels', action: onNavigateToHostels || scrollToTop },
+            { text: 'Contact', action: onScrollToContact || (() => {}) },
             { text: 'Blog', action: onNavigateToBlog }
         ],
         'For Students': [
             { text: 'Find a Roommate', action: user ? onNavigateToRoommateFinder : onNavigateToAuth },
-            { text: 'Student Deals', action: user ? handleStudentDealsClick : onNavigateToAuth },
-            { text: 'Campus Guides', action: user ? handleCampusGuideClick : onNavigateToAuth },
+            { text: 'Student Deals', action: handleStudentDealsClick },
             !user && { text: 'Login / Sign Up', action: onNavigateToAuth }
         ].filter(Boolean),
         'Support': [
@@ -99,8 +114,8 @@ const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth
                     <div>
                         <h3 className="text-sm font-semibold text-gray-200 tracking-wider uppercase">Get the App</h3>
                         <div className="mt-4 space-y-3">
-                            <a href="#" aria-label="Download on the App Store"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" className="h-10" /></a>
-                             <a href="#" aria-label="Get it on Google Play"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" className="h-10" /></a>
+                            <button onClick={handleAppStoreClick} aria-label="Download on the App Store"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" className="h-10 cursor-pointer hover:opacity-80 transition-opacity" /></button>
+                             <button onClick={handleGooglePlayClick} aria-label="Get it on Google Play"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" className="h-10 cursor-pointer hover:opacity-80 transition-opacity" /></button>
                         </div>
                     </div>
                 </div>

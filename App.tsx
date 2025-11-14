@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 
 import Header from './components/Header';
@@ -41,6 +41,10 @@ type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' |
 
 
 const App = () => {
+  // --- Refs ---
+  const contactFormRef = useRef<HTMLDivElement>(null);
+  const studentDealsRef = useRef<HTMLDivElement>(null);
+
   // --- State Management ---
   const [currentView, setCurrentView] = useState<AppView>('main');
   const [selectedUniversity, setSelectedUniversity] = useState<University>(UNIVERSITIES[0]);
@@ -483,6 +487,18 @@ const App = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  const handleScrollToContact = () => {
+    if (contactFormRef.current) {
+      contactFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleScrollToDeals = () => {
+    if (studentDealsRef.current) {
+      studentDealsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // --- Page Content ---
   if (isLoading) {
     return (
@@ -508,6 +524,7 @@ const App = () => {
           onLogout={handleLogout}
           notifications={notifications}
           onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
+          onScrollToContact={handleScrollToContact}
         />
 
         <main>
@@ -540,6 +557,7 @@ const App = () => {
                 lostItems={lostItems}
                 studentSpotlights={studentSpotlights}
                 confessions={confessions}
+                studentDealsRef={studentDealsRef}
                 confessionHandler={confessionHandler}
               />
               <Services services={SERVICES} selectedUniversity={selectedUniversity} />
@@ -603,11 +621,16 @@ const App = () => {
         
         {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'profile' && (
           <>
-            <ContactForm />
+            <div ref={contactFormRef}>
+              <ContactForm />
+            </div>
             <Footer
               onNavigateToRoommateFinder={() => handleNavigation('roommateFinder')}
               onNavigateToBlog={() => handleNavigation('blog')}
               onNavigateToAuth={() => handleNavigation('auth')}
+              onNavigateToHostels={() => handleNavigation('main')}
+              onScrollToContact={handleScrollToContact}
+              onScrollToDeals={handleScrollToDeals}
               user={currentUser}
             />
           </>

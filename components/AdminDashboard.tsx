@@ -14,7 +14,12 @@ interface UploadedImage {
 // --- Helper Components ---
 // FIX: Add explicit types to helper components to prevent type inference issues.
 const Input = (props: React.ComponentPropsWithoutRef<'input'>) => <input {...props} className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-unistay-yellow focus:border-unistay-yellow" />;
-const Textarea = (props: React.ComponentPropsWithoutRef<'textarea'>) => <textarea {...props} rows={4} className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-unistay-yellow focus:border-unistay-yellow" />;
+const Textarea = (props: React.ComponentPropsWithoutRef<'textarea'>) => {
+    const { className, ...rest } = props;
+    const baseClasses = "w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-unistay-yellow focus:border-unistay-yellow";
+    const mergedClasses = className ? `${baseClasses} ${className}` : baseClasses;
+    return <textarea {...rest} rows={4} className={mergedClasses} />;
+};
 const Select = (props: React.ComponentPropsWithoutRef<'select'>) => <select {...props} className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-unistay-yellow focus:border-unistay-yellow" />;
 
 interface ButtonProps {
@@ -112,6 +117,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
         inlineImages: []
     });
     const [descriptionPreview, setDescriptionPreview] = useState(false);
+    const [lastInsertedImage, setLastInsertedImage] = useState<number | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -121,8 +127,13 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
     // Helper function to apply formatting to selected text
     const applyFormatting = (format: 'bold' | 'italic' | 'break') => {
         const textarea = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
-        if (!textarea) return;
+        if (!textarea) {
+            alert('Cannot find text area');
+            return;
+        }
 
+        // Ensure textarea has focus
+        textarea.focus();
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const selectedText = textarea.value.substring(start, end);
@@ -148,19 +159,47 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
 
         setFormData(prev => ({ ...prev, description: newDescription }));
         
-        // Reset selection
+        // Reset selection and show visual feedback
         setTimeout(() => {
+            textarea.focus();
             textarea.selectionStart = start + formattedText.length;
             textarea.selectionEnd = start + formattedText.length;
-            textarea.focus();
+            
+            // Show brief visual feedback for new paragraph
+            if (format === 'break') {
+                const originalBg = textarea.style.backgroundColor;
+                textarea.style.backgroundColor = '#fff3cd';
+                setTimeout(() => {
+                    textarea.style.backgroundColor = originalBg;
+                }, 300);
+            }
         }, 0);
+    };
+
+    // Handle keyboard shortcuts for formatting
+    const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            applyFormatting('break');
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+            e.preventDefault();
+            applyFormatting('bold');
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+            e.preventDefault();
+            applyFormatting('italic');
+        }
     };
 
     // Function to insert an inline image marker at cursor position
     const insertInlineImage = (imageIndex: number) => {
         const textarea = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
-        if (!textarea) return;
+        if (!textarea) {
+            alert('Please focus on the article text area first');
+            return;
+        }
 
+        // Ensure textarea has focus and proper cursor position
+        textarea.focus();
         const start = textarea.selectionStart;
         const imageMarker = `\n[IMAGE_${imageIndex}]\n`;
         
@@ -170,11 +209,23 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
             textarea.value.substring(start);
 
         setFormData(prev => ({ ...prev, description: newDescription }));
+        setLastInsertedImage(imageIndex);
+
+        // Clear the message after 2 seconds
+        setTimeout(() => setLastInsertedImage(null), 2000);
         
+        // Show visual feedback with highlight
         setTimeout(() => {
+            textarea.focus();
             textarea.selectionStart = start + imageMarker.length;
             textarea.selectionEnd = start + imageMarker.length;
-            textarea.focus();
+            
+            // Highlight the inserted image marker temporarily
+            const originalBg = textarea.style.backgroundColor;
+            textarea.style.backgroundColor = '#d1ecf1';
+            setTimeout(() => {
+                textarea.style.backgroundColor = originalBg;
+            }, 400);
         }, 0);
     };
 
@@ -321,11 +372,12 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
             
             {/* Description with Formatting Tools */}
             <div className="space-y-2">
-                <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded border border-gray-300">
+                <label className="block text-sm font-semibold text-gray-700">Article Content</label>
+                <div className="flex gap-2 items-center flex-wrap bg-white p-3 rounded border border-gray-300 shadow-sm">
                     <button 
                         type="button" 
                         onClick={() => applyFormatting('bold')}
-                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors"
+                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors flex items-center gap-2"
                         title="Make selected text bold (Ctrl+B)"
                     >
                         <i className="fas fa-bold"></i> Bold
@@ -333,7 +385,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
                     <button 
                         type="button" 
                         onClick={() => applyFormatting('italic')}
-                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors"
+                        className="px-3 py-1 bg-unistay-yellow text-unistay-navy rounded hover:bg-yellow-400 font-bold transition-colors flex items-center gap-2"
                         title="Make selected text italic (Ctrl+I)"
                     >
                         <i className="fas fa-italic"></i> Italic
@@ -342,25 +394,34 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
                     <button 
                         type="button" 
                         onClick={() => applyFormatting('break')}
-                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                        title="Insert a line break"
+                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded transition-colors font-semibold flex items-center gap-2"
+                        title="Insert a new paragraph (Ctrl+Enter)"
                     >
-                        <i className="fas fa-paragraph"></i> New Section
+                        <i className="fas fa-enter"></i> New Paragraph
                     </button>
-                    <div className="ml-auto text-xs text-gray-500">
-                        Use **text** for bold, *text* for italic
+                    <div className="ml-auto text-xs text-gray-500 italic">
+                        💡 Shortcuts: <code className="bg-gray-100 px-2 py-1 rounded">Ctrl+B</code> bold • <code className="bg-gray-100 px-2 py-1 rounded">Ctrl+I</code> italic • <code className="bg-gray-100 px-2 py-1 rounded">Ctrl+Enter</code> new paragraph
                     </div>
                 </div>
                 <button 
                     type="button"
                     onClick={() => setDescriptionPreview(!descriptionPreview)}
-                    className="text-sm text-unistay-yellow hover:text-unistay-navy transition-colors"
+                    className="text-sm text-unistay-yellow hover:text-unistay-navy transition-colors font-semibold flex items-center gap-2"
                 >
-                    {descriptionPreview ? '✓ Preview ON' : '○ Preview OFF'}
+                    {descriptionPreview ? <i className="fas fa-eye text-green-500"></i> : <i className="fas fa-eye-slash text-gray-400"></i>}
+                    {descriptionPreview ? 'Preview ON' : 'Preview OFF'}
                 </button>
             </div>
 
-            <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description (use **text** for bold, *text* for italic)" required />
+            <Textarea 
+                name="description" 
+                value={formData.description} 
+                onChange={handleChange}
+                onKeyDown={handleDescriptionKeyDown}
+                placeholder="Write your article here... Use **text** for bold, *text* for italic. Press Ctrl+Enter for new paragraph." 
+                required 
+                className="!border-2 !border-gray-300 !p-3 !rounded-md !text-sm !font-mono focus:!border-unistay-yellow focus:!ring-2 focus:!ring-unistay-yellow/50"
+            />
             
             {descriptionPreview && (
                 <div className="p-4 bg-white border border-gray-300 rounded-lg">
@@ -372,58 +433,82 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
             )}
             
             {/* Inline Images Section */}
-            <div className="space-y-4 p-4 bg-white border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-700">
-                        <i className="fas fa-images mr-2 text-blue-500"></i>Inline Images (Optional)
+            <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg shadow-md">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                        <i className="fas fa-images text-blue-600"></i>Inline Images (Optional)
                     </h3>
-                    <span className="text-xs text-gray-500">Add images to appear in the middle of your article</span>
+                    <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full font-semibold">Click to Insert at Cursor</span>
                 </div>
+                <p className="text-sm text-gray-700 mb-3 italic">
+                    📍 Click the cursor in your article text above, then click an image below to place it exactly where you want.
+                </p>
+                
+                {lastInsertedImage !== null && (
+                    <div className="p-3 bg-green-100 border-2 border-green-400 rounded-lg text-green-800 font-semibold flex items-center gap-2 animate-pulse">
+                        <i className="fas fa-check-circle"></i>
+                        Image #{lastInsertedImage + 1} inserted at cursor position! Check preview to see it.
+                    </div>
+                )}
                 
                 <Input 
                     type="file" 
                     accept="image/*"
                     multiple
                     onChange={(e) => handleImageUpload(e, true)}
-                    className="w-full"
+                    className="w-full border-2 border-blue-300 focus:border-blue-600"
                 />
                 
-                {/* Inline Image Preview Grid */}
+                {/* Inline Image Preview Grid with Enhanced UI */}
                 {formData.inlineImages && formData.inlineImages.length > 0 && (
-                    <div className="space-y-3">
-                        <p className="text-sm text-gray-600">Click on an image to insert it at cursor position:</p>
+                    <div className="space-y-3 mt-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <i className="fas fa-mouse-pointer text-blue-600"></i>
+                            {formData.inlineImages.length} image{formData.inlineImages.length !== 1 ? 's' : ''} ready to insert:
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {formData.inlineImages.map((img, index) => (
-                                <div key={index} className="relative group cursor-pointer">
+                                <div key={index} className="relative group">
                                     <div 
                                         onClick={() => insertInlineImage(index)}
-                                        className="relative h-32 overflow-hidden rounded-lg group hover:opacity-75 transition-opacity"
+                                        className="relative h-40 overflow-hidden rounded-lg cursor-pointer shadow-lg transform transition-all hover:scale-105 hover:shadow-xl border-2 border-blue-300 hover:border-blue-600"
                                     >
                                         <img
                                             src={img.previewUrl}
                                             alt={`Inline ${index + 1}`}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover transition-opacity group-hover:opacity-70"
                                         />
-                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all">
-                                            <span className="text-white font-semibold text-sm bg-unistay-navy bg-opacity-70 px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                                Click to Insert
+                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex flex-col items-center justify-center transition-all gap-2">
+                                            <span className="text-white font-bold text-lg bg-blue-600 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg flex items-center gap-2">
+                                                <i className="fas fa-plus"></i> Insert
+                                            </span>
+                                            <span className="text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                                at cursor position
                                             </span>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => removeImage(index, true)}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                                        className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-all hover:scale-110 border-2 border-white"
                                         title="Remove this image"
                                     >
-                                        <i className="fas fa-times text-xs" />
+                                        <i className="fas fa-trash text-xs" />
                                     </button>
-                                    <div className="mt-1 text-xs text-center text-gray-600">
-                                        Image {index + 1}
+                                    <div className="mt-2 text-xs font-semibold text-center text-blue-700 bg-blue-100 py-1 rounded">
+                                        #{index + 1}
                                     </div>
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+                
+                {(!formData.inlineImages || formData.inlineImages.length === 0) && (
+                    <div className="py-8 text-center text-gray-600 border-2 border-dashed border-blue-300 rounded-lg bg-white">
+                        <i className="fas fa-image text-4xl text-blue-300 mb-3 block"></i>
+                        <p className="font-semibold">No images uploaded yet</p>
+                        <p className="text-sm mt-1">Upload images above to add them to your article</p>
                     </div>
                 )}
             </div>
@@ -886,6 +971,8 @@ interface DealFormData {
     description?: string;
     link?: string;
     imageUrl?: string;
+    imageUrls?: string[];
+    images?: UploadedImage[];
     active?: boolean;
     discount?: number; // Percentage discount (e.g., 20 for 20% OFF)
 }
@@ -903,10 +990,11 @@ const DealsForm: React.FC<DealFormProps> = ({ item, onSubmit, onCancel, isSubmit
         description: item?.description || '',
         link: item?.link || '',
         imageUrl: item?.imageUrl || '',
+        imageUrls: item?.imageUrls || [],
+        images: item?.imageUrl ? [{ file: null as any, previewUrl: item.imageUrl }] : [],
         active: item?.active ?? true,
         discount: item?.discount || 0,
     });
-    const [imageFile, setImageFile] = useState<File | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
@@ -920,25 +1008,58 @@ const DealsForm: React.FC<DealFormProps> = ({ item, onSubmit, onCancel, isSubmit
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setImageFile(file);
-        const preview = URL.createObjectURL(file);
-        setFormData(prev => ({ ...prev, imageUrl: preview }));
+        const files = e.target.files;
+        if (!files) return;
+
+        Array.from(files).forEach((file: File) => {
+            const imageUrl = URL.createObjectURL(file);
+            setFormData(prev => ({
+                ...prev,
+                images: [...(prev.images || []), { file, previewUrl: imageUrl }]
+            }));
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: (prev.images || []).filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if ((formData.images || []).length === 0) {
+            alert('Please upload at least one image');
+            return;
+        }
+
         try {
-            let imageUrl = formData.imageUrl;
-            if (imageFile) {
-                const uploaded = await storageService.uploadMultipleImages([imageFile], 'news', `${item?.id || Date.now()}`);
-                imageUrl = uploaded[0];
+            const files = (formData.images || []).map(img => img.file);
+            const timestamp = new Date().getTime();
+            const dealFolder = `${item?.id || timestamp}`;
+            const uploadedUrls = await storageService.uploadMultipleImages(files, 'news', dealFolder);
+
+            // If updating, delete old images
+            if (item?.id && item.imageUrl) {
+                try {
+                    await storageService.deleteImage(item.imageUrl, 'news');
+                } catch (error) {
+                    console.warn('Failed to delete old deal image:', error);
+                }
             }
-            onSubmit({ ...formData, imageUrl, timestamp: new Date().toISOString() });
+
+            onSubmit({ 
+                ...formData, 
+                imageUrl: uploadedUrls[0],
+                imageUrls: uploadedUrls,
+                timestamp: new Date().toISOString(),
+                images: undefined
+            });
         } catch (err) {
-            console.error('Failed to upload deal image', err);
-            alert('Failed to upload image');
+            console.error('Failed to upload deal images', err);
+            alert('Failed to upload images');
         }
     };
 
@@ -963,10 +1084,46 @@ const DealsForm: React.FC<DealFormProps> = ({ item, onSubmit, onCancel, isSubmit
                 </div>
             </div>
 
-            <div>
-                <Input type="file" accept="image/*" onChange={handleImageUpload} />
-                {formData.imageUrl && <img src={formData.imageUrl} alt="preview" className="w-32 h-32 object-cover rounded-md mt-2" />}
+            {/* Multiple Images Upload Section */}
+            <div className="space-y-4 p-4 bg-white border border-gray-300 rounded-lg">
+                <h3 className="font-semibold text-gray-700">
+                    <i className="fas fa-images mr-2 text-unistay-yellow"></i>Deal Images (Multiple)
+                </h3>
+                <Input 
+                    type="file" 
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="w-full"
+                    required={(formData.images || []).length === 0}
+                />
+                
+                {/* Image Preview Grid */}
+                {(formData.images || []).length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {formData.images.map((img, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={img.previewUrl}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <i className="fas fa-times" />
+                                </button>
+                                <div className="mt-1 text-xs text-center text-gray-600">
+                                    Image {index + 1}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
+
             <div className="flex items-center gap-2">
                 <input id="active" name="active" type="checkbox" checked={!!formData.active} onChange={handleChange} className="h-4 w-4 text-unistay-yellow" />
                 <label htmlFor="active" className="text-sm">Active</label>

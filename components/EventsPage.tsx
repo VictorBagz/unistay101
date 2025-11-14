@@ -10,6 +10,7 @@ interface EventsPageProps {
 
 const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [fullImageUrl, setFullImageUrl] = useState<string | null>(null);
 
     // Sort events so the latest posted event appears first. Use event.timestamp if available, otherwise fall back to event.date.
     const sortedEvents = [...events].sort((a, b) => {
@@ -36,17 +37,17 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {sortedEvents.map((event, index) => (
                             <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
-                                <div className="relative">
-                                    <img src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover" />
+                                <div className="relative cursor-pointer" onClick={() => setFullImageUrl(event.imageUrl)}>
+                                    <img src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover group-hover:opacity-75 transition-opacity duration-300" />
                                     <div className="absolute top-4 left-4 bg-unistay-yellow text-unistay-navy text-center rounded-lg px-4 py-2 shadow-lg">
                                         <p className="font-extrabold text-2xl">{event.day}</p>
                                         <p className="font-bold text-sm leading-tight">{event.month}</p>
                                     </div>
                                 </div>
                                 <div className="p-5">
-                                    <h3 className="font-bold text-xl text-unistay-navy mb-2 group-hover:text-unistay-yellow transition-colors">{event.title}</h3>
-                                    <p className="text-sm text-gray-600"><i className="fas fa-calendar-alt text-gray-400 mr-2"></i>{event.date}</p>
-                                    <p className="text-sm text-gray-600 mt-1"><i className="fas fa-map-marker-alt text-gray-400 mr-2"></i>{event.location}</p>
+                                        <h3 className="font-bold text-xl text-unistay-navy mb-2 group-hover:text-unistay-yellow transition-colors">{event.title}</h3>
+                                        <p className="text-sm text-gray-600"><i className="fas fa-calendar-alt text-gray-400 mr-2"></i>{event.date}</p>
+                                        <p className="text-sm text-gray-600 mt-1"><i className="fas fa-map-marker-alt text-gray-400 mr-2"></i>{event.location}</p>
                                     <button 
                                         onClick={() => setSelectedEvent(event)}
                                         className="mt-4 w-full bg-unistay-navy text-white font-semibold py-2 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105"
@@ -72,6 +73,31 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
                     event={selectedEvent}
                     onClose={() => setSelectedEvent(null)}
                 />
+            )}
+
+            {/* Full Image Popup */}
+            {fullImageUrl && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+                    onClick={() => setFullImageUrl(null)}
+                >
+                    <div 
+                        className="relative max-w-4xl max-h-[90vh] flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img 
+                            src={fullImageUrl} 
+                            alt="Full view" 
+                            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        />
+                        <button
+                            onClick={() => setFullImageUrl(null)}
+                            className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
+                        >
+                            <i className="fas fa-times text-lg text-gray-800"></i>
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

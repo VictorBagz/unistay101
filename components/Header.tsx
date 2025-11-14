@@ -145,17 +145,19 @@ interface HeaderProps {
     onLogout: () => void;
     notifications: Notification[];
     onMarkNotificationsAsRead: () => void;
+    onScrollToContact?: () => void;
 }
 
-const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notifications, onMarkNotificationsAsRead }: HeaderProps) => {
+const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notifications, onMarkNotificationsAsRead, onScrollToContact }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const navLinks: { text: string; view: AppView }[] = [
+  const navLinks: { text: string; view?: AppView; action?: () => void }[] = [
     { text: 'Hostels', view: 'main' },
     { text: 'Roommates', view: 'roommateFinder' },
     { text: 'News', view: 'blog' },
     { text: 'Events', view: 'events' },
     { text: 'Jobs', view: 'jobs' },
+    { text: 'Contact Us', action: onScrollToContact },
   ];
 
   const isActive = (view: AppView) => {
@@ -185,9 +187,9 @@ const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notification
             {navLinks.map((item) => (
               <button 
                 key={item.text} 
-                onClick={() => onNavigate(item.view)} 
+                onClick={() => item.action ? item.action() : (item.view && onNavigate(item.view))} 
                 className={`font-medium transition-all duration-200 px-1 pb-2 pt-1 border-b-2 ${
-                  isActive(item.view)
+                  item.view && isActive(item.view)
                     ? 'text-unistay-yellow border-unistay-yellow'
                     : 'border-transparent hover:text-unistay-yellow'
                 }`}
@@ -222,8 +224,8 @@ const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notification
           {navLinks.map((item) => (
             <button 
               key={item.text} 
-              onClick={() => handleMobileNav(item.view)}
-              className={`font-medium text-lg ${isActive(item.view) ? 'text-unistay-yellow' : 'text-white'}`}
+              onClick={() => item.action ? (item.action(), setMobileMenuOpen(false)) : handleMobileNav(item.view!)}
+              className={`font-medium text-lg ${item.view && isActive(item.view) ? 'text-unistay-yellow' : 'text-white'}`}
             >
               {item.text}
             </button>

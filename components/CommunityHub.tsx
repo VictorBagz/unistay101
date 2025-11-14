@@ -5,6 +5,7 @@ import { useScrollObserver } from '../hooks/useScrollObserver';
 import { formatTimeAgo, sortByTimestamp } from '../utils/dateUtils';
 import { spotlightVoteService } from '../services/dbService';
 import Spinner from './Spinner';
+import EventDetailModal from './EventDetailModal';
 
 type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
@@ -15,6 +16,7 @@ interface Deal {
   description: string;
   discount: number;
   imageUrl: string;
+  imageUrls?: string[]; // Support for multiple images
   postedBy: string;
   timestamp: string;
 }
@@ -70,7 +72,9 @@ const NewsPanel = ({ items, onNavigateToBlog }: { items: NewsItem[], onNavigateT
   );
 };
 
-const EventsPanel = ({ items }: { items: Event[] }) => {
+const EventsPanel = ({ items, onSelectEvent }: { items: Event[], onSelectEvent?: (event: Event) => void }) => {
+  const [fullImageUrl, setFullImageUrl] = React.useState<string | null>(null);
+  
   // Sort events by timestamp (most recent posted first). Fallback to event.date if timestamp is missing.
   const sorted = [...items].sort((a, b) => {
     const taVal = (a as any).timestamp;
@@ -81,23 +85,57 @@ const EventsPanel = ({ items }: { items: Event[] }) => {
   });
 
   return (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {sorted.map(event => (
-      <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-1 transition-transform duration-300">
-        <div className="relative">
-          <img src={event.imageUrl} alt={event.title} className="h-40 w-full object-cover" />
-          <div className="absolute top-3 left-3 bg-unistay-yellow text-unistay-navy text-center rounded-lg px-3 py-1 shadow-md">
-            <p className="font-extrabold text-xl">{event.day}</p>
-            <p className="font-semibold text-xs leading-tight">{event.month}</p>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {sorted.map((event, index) => (
+          <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
+            <div className="relative cursor-pointer" onClick={() => setFullImageUrl(event.imageUrl)}>
+              <img src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover group-hover:opacity-75 transition-opacity duration-300" />
+              <div className="absolute top-4 left-4 bg-unistay-yellow text-unistay-navy text-center rounded-lg px-4 py-2 shadow-lg">
+                <p className="font-extrabold text-2xl">{event.day}</p>
+                <p className="font-bold text-sm leading-tight">{event.month}</p>
+              </div>
+            </div>
+            <div className="p-5">
+              <h3 className="font-bold text-xl text-unistay-navy mb-2 group-hover:text-unistay-yellow transition-colors">{event.title}</h3>
+              <p className="text-sm text-gray-600"><i className="fas fa-calendar-alt text-gray-400 mr-2"></i>{event.date}</p>
+              <p className="text-sm text-gray-600 mt-1"><i className="fas fa-map-marker-alt text-gray-400 mr-2"></i>{event.location}</p>
+              <button 
+                onClick={() => onSelectEvent?.(event)}
+                className="mt-4 w-full bg-unistay-navy text-white font-semibold py-2 rounded-lg hover:bg-opacity-80 transition-all transform hover:scale-105"
+              >
+                More Info
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Full Image Popup */}
+      {fullImageUrl && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          onClick={() => setFullImageUrl(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={fullImageUrl} 
+              alt="Full view" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setFullImageUrl(null)}
+              className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
+            >
+              <i className="fas fa-times text-lg text-gray-800"></i>
+            </button>
           </div>
         </div>
-        <div className="p-4">
-          <h3 className="font-bold text-lg text-unistay-navy">{event.title}</h3>
-          <p className="text-sm text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-unistay-yellow mr-2"></i>{event.location}</p>
-        </div>
-      </div>
-    ))}
-  </div>
+      )}
+    </>
   );
 };
 
@@ -121,58 +159,270 @@ const JobsPanel = ({ items }: { items: Job[] }) => (
   </div>
 );
 
-const StudentDealsPanel = ({ items }: { items: Deal[] }) => (
-  <div className="overflow-x-auto scrollbar-hide">
-    <div className="flex gap-6 pb-4 min-w-min">
-      {items.map(deal => (
-        <div key={deal.id} className="flex-shrink-0 w-72 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col">
-          <div className="relative">
-            <img src={deal.imageUrl} alt={deal.title} className="h-40 w-full object-cover" />
-            <div className="absolute top-3 right-3 bg-unistay-yellow text-unistay-navy font-bold px-3 py-1 rounded-full text-sm">
-              {deal.discount}% OFF
-            </div>
-          </div>
-          <div className="p-4 flex-1 flex flex-col">
-            <h3 className="font-bold text-lg text-unistay-navy">{deal.title}</h3>
-            <p className="text-sm text-gray-600 mt-2">{deal.description}</p>
-            <p className="text-xs text-gray-400 mt-3">{deal.timestamp ? formatTimeAgo(deal.timestamp) : 'Recently'}</p>
-            <button className="mt-4 w-full bg-unistay-navy text-white font-semibold py-2 px-4 rounded-lg hover:bg-unistay-yellow hover:text-unistay-navy transition-colors">
-              Order Now
+const StudentDealsPanel = ({ items }: { items: Deal[] }) => {
+  const [currentImageIndices, setCurrentImageIndices] = React.useState<Record<string, number>>({});
+  const [touchStart, setTouchStart] = React.useState<Record<string, number>>({});
+  const [fullImageUrl, setFullImageUrl] = React.useState<string | null>(null);
+
+  // Initialize current image indices
+  React.useEffect(() => {
+    const indices: Record<string, number> = {};
+    items.forEach(deal => {
+      indices[deal.id] = 0;
+    });
+    setCurrentImageIndices(indices);
+  }, [items]);
+
+  const getImages = (deal: Deal) => {
+    return deal.imageUrls && deal.imageUrls.length > 0 ? deal.imageUrls : [deal.imageUrl];
+  };
+
+  const getCurrentImage = (deal: Deal) => {
+    const images = getImages(deal);
+    return images[currentImageIndices[deal.id] || 0] || deal.imageUrl;
+  };
+
+  const goToNextImage = (dealId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const images = getImages(items.find(d => d.id === dealId)!);
+    setCurrentImageIndices(prev => ({
+      ...prev,
+      [dealId]: (prev[dealId] + 1) % images.length,
+    }));
+  };
+
+  const goToPrevImage = (dealId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const images = getImages(items.find(d => d.id === dealId)!);
+    setCurrentImageIndices(prev => ({
+      ...prev,
+      [dealId]: (prev[dealId] - 1 + images.length) % images.length,
+    }));
+  };
+
+  const handleTouchStart = (dealId: string, e: React.TouchEvent) => {
+    setTouchStart(prev => ({
+      ...prev,
+      [dealId]: e.touches[0].clientX,
+    }));
+  };
+
+  const handleTouchEnd = (dealId: string, e: React.TouchEvent) => {
+    if (!touchStart[dealId]) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart[dealId] - touchEnd;
+
+    // Swipe threshold of 50 pixels
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        // Swiped left - go to next image
+        goToNextImage(dealId, e as any);
+      } else {
+        // Swiped right - go to previous image
+        goToPrevImage(dealId, e as any);
+      }
+    }
+
+    setTouchStart(prev => {
+      const newState = { ...prev };
+      delete newState[dealId];
+      return newState;
+    });
+  };
+
+  return (
+    <>
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-6 pb-4 min-w-min">
+          {items.map(deal => {
+            const images = getImages(deal);
+            const currentImageIndex = currentImageIndices[deal.id] || 0;
+            const hasMultipleImages = images.length > 1;
+
+            return (
+              <div 
+                key={deal.id} 
+                className="flex-shrink-0 w-72 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col"
+              >
+                {/* Image Container with Navigation */}
+                <div 
+                  className="relative h-40 w-full overflow-hidden bg-gray-100 group cursor-pointer"
+                  onTouchStart={(e) => handleTouchStart(deal.id, e)}
+                  onTouchEnd={(e) => handleTouchEnd(deal.id, e)}
+                  onClick={() => setFullImageUrl(getCurrentImage(deal))}
+                >
+                  <img 
+                    src={getCurrentImage(deal)} 
+                    alt={deal.title} 
+                    className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-75" 
+                  />
+
+                  {/* Previous Button */}
+                  {hasMultipleImages && (
+                    <button
+                      onClick={(e) => goToPrevImage(deal.id, e)}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-1.5 transition-all duration-200 shadow-md z-10"
+                      aria-label="Previous image"
+                    >
+                      <i className="fas fa-chevron-left text-gray-800 text-sm"></i>
+                    </button>
+                  )}
+
+                  {/* Next Button */}
+                  {hasMultipleImages && (
+                    <button
+                      onClick={(e) => goToNextImage(deal.id, e)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-1.5 transition-all duration-200 shadow-md z-10"
+                      aria-label="Next image"
+                    >
+                      <i className="fas fa-chevron-right text-gray-800 text-sm"></i>
+                    </button>
+                  )}
+
+                  {/* Discount Badge */}
+                  <div className="absolute top-3 right-3 bg-unistay-yellow text-unistay-navy font-bold px-3 py-1 rounded-full text-sm">
+                    {deal.discount}% OFF
+                  </div>
+
+                  {/* Image Counter */}
+                  {hasMultipleImages && (
+                    <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                      {currentImageIndex + 1} / {images.length}
+                    </div>
+                  )}
+
+                  {/* Image Indicators (Dots) */}
+                  {hasMultipleImages && (
+                    <div className="absolute bottom-3 right-3 flex gap-1">
+                      {images.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndices(prev => ({
+                              ...prev,
+                              [deal.id]: idx,
+                            }));
+                          }}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            idx === currentImageIndex
+                              ? 'bg-white w-3'
+                              : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                          }`}
+                          aria-label={`Go to image ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Content - Fixed Height Container */}
+                <div className="p-4 flex-1 flex flex-col">
+                  <h3 className="font-bold text-lg text-unistay-navy">{deal.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2 flex-grow">{deal.description}</p>
+                  <p className="text-xs text-gray-400 mt-3">{deal.timestamp ? formatTimeAgo(deal.timestamp) : 'Recently'}</p>
+                  
+                  {/* Button - Fixed at Bottom */}
+                  <button className="mt-auto pt-4 w-full bg-unistay-navy text-white font-semibold py-2 px-4 rounded-lg hover:bg-unistay-yellow hover:text-unistay-navy transition-colors">
+                    Order Now
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Full Image Popup */}
+      {fullImageUrl && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          onClick={() => setFullImageUrl(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={fullImageUrl} 
+              alt="Full view" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setFullImageUrl(null)}
+              className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
+            >
+              <i className="fas fa-times text-lg text-gray-800"></i>
             </button>
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-);
+      )}
+    </>
+  );
+};
 
-const LostAndFoundPanel = ({ items }: { items: LostItem[] }) => (
-  <div className="overflow-x-auto scrollbar-hide">
-    <div className="flex gap-4 pb-4 min-w-min">
-      {items.map(item => (
-        <div key={item.id} className={`flex-shrink-0 w-96 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4 ${
-          item.category === 'lost' ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'
-        }`}>
-          <img src={item.imageUrl} alt={item.title} className="w-full h-40 rounded-lg object-cover mb-3" />
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-bold text-unistay-navy">{item.title}</h3>
-            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-              item.category === 'lost' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'
+const LostAndFoundPanel = ({ items }: { items: LostItem[] }) => {
+  const [fullImageUrl, setFullImageUrl] = React.useState<string | null>(null);
+
+  return (
+    <>
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-4 pb-4 min-w-min">
+          {items.map(item => (
+            <div key={item.id} className={`flex-shrink-0 w-96 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4 ${
+              item.category === 'lost' ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'
             }`}>
-              {item.category === 'lost' ? 'LOST' : 'FOUND'}
-            </span>
-          </div>
-          <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-          <p className="text-xs text-gray-400 mb-2">Reported by {item.postedBy}</p>
-          <p className="text-xs text-gray-400 flex items-center gap-1">
-            <i className="fas fa-phone"></i> {item.phone}
-          </p>
-          <p className="text-xs text-gray-400 mt-2">{item.timestamp ? formatTimeAgo(item.timestamp) : 'Recently'}</p>
+              <img 
+                src={item.imageUrl} 
+                alt={item.title} 
+                className="w-full h-40 rounded-lg object-cover mb-3 cursor-pointer hover:opacity-75 transition-opacity duration-300" 
+                onClick={() => setFullImageUrl(item.imageUrl)}
+              />
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-bold text-unistay-navy">{item.title}</h3>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                  item.category === 'lost' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'
+                }`}>
+                  {item.category === 'lost' ? 'LOST' : 'FOUND'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <i className="fas fa-phone"></i> {item.phone}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">{item.timestamp ? formatTimeAgo(item.timestamp) : 'Recently'}</p>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  </div>
-);
+      </div>
+
+      {/* Full Image Popup */}
+      {fullImageUrl && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          onClick={() => setFullImageUrl(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={fullImageUrl} 
+              alt="Full view" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setFullImageUrl(null)}
+              className="absolute top-4 right-4 bg-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition-colors shadow-lg"
+            >
+              <i className="fas fa-times text-lg text-gray-800"></i>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], user: User | null }) => {
   const [votes, setVotes] = React.useState<Record<string, number>>({});
@@ -840,6 +1090,7 @@ interface CommunityHubProps {
   lostItems?: LostItem[];
   studentSpotlights?: StudentSpotlight[];
   confessions?: Confession[];
+  studentDealsRef?: React.RefObject<HTMLDivElement>;
   confessionHandler?: {
     add: (content: string) => Promise<void>;
     remove: (id: string) => Promise<void>;
@@ -849,9 +1100,10 @@ interface CommunityHubProps {
   };
 }
 
-const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNavigateToEvents, onNavigateToJobs, user, onNavigate, deals = [], lostItems = [], studentSpotlights = [], confessions = [], confessionHandler }: CommunityHubProps) => {
+const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNavigateToEvents, onNavigateToJobs, user, onNavigate, deals = [], lostItems = [], studentSpotlights = [], confessions = [], studentDealsRef, confessionHandler }: CommunityHubProps) => {
   const [activeTab, setActiveTab] = useState('News');
   const [sectionRef, isVisible] = useScrollObserver<HTMLElement>();
+  const [selectedEvent, setSelectedEvent] = React.useState<Event | null>(null);
 
   const tabs = [
     { name: 'News', icon: 'fas fa-newspaper', action: onNavigateToBlog },
@@ -861,7 +1113,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
 
   const panels = {
     News: <NewsPanel items={news} onNavigateToBlog={onNavigateToBlog} />,
-    Events: <EventsPanel items={events} />,
+    Events: <EventsPanel items={events} onSelectEvent={setSelectedEvent} />,
     Jobs: <JobsPanel items={jobs} />,
   };
   
@@ -912,7 +1164,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
 
         {/* Student Deals Section */}
         {deals && deals.length > 0 && (
-          <div className={`mt-16 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100' : 'opacity-100'}`}>
+          <div ref={studentDealsRef} className={`mt-16 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100' : 'opacity-100'}`}>
             <div className="mb-10">
               <h3 className="text-2xl font-bold text-unistay-navy mb-2">🛍️ Student Deals</h3>
               <p className="text-gray-600">Exclusive discounts and offers from local businesses</p>
@@ -984,6 +1236,14 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
           </div>
         )}
       </div>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </section>
   );
 };
