@@ -6,6 +6,7 @@ import { formatTimeAgo, sortByTimestamp } from '../utils/dateUtils';
 import { spotlightVoteService } from '../services/dbService';
 import Spinner from './Spinner';
 import EventDetailModal from './EventDetailModal';
+import NewsDetailModal from './NewsDetailModal';
 
 type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
@@ -45,7 +46,7 @@ interface StudentSpotlight {
   isWinner?: boolean;
 }
 
-const NewsPanel = ({ items, onNavigateToBlog }: { items: NewsItem[], onNavigateToBlog: () => void }) => {
+const NewsPanel = ({ items, onNavigateToBlog, onSelectNews }: { items: NewsItem[], onNavigateToBlog: () => void, onSelectNews?: (news: NewsItem) => void }) => {
   const sortedItems = sortByTimestamp(items);
   
   return (
@@ -60,7 +61,7 @@ const NewsPanel = ({ items, onNavigateToBlog }: { items: NewsItem[], onNavigateT
             <p className="text-xs text-gray-400">Source: {item.source}</p>
           </div>
           <button 
-            onClick={onNavigateToBlog}
+            onClick={() => onSelectNews ? onSelectNews(item) : onNavigateToBlog()}
             className="mt-2 text-sm font-semibold text-unistay-yellow hover:text-unistay-navy transition-colors"
           >
             Read Full Article <i className="fas fa-arrow-right ml-1"></i>
@@ -427,6 +428,8 @@ const LostAndFoundPanel = ({ items }: { items: LostItem[] }) => {
 const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], user: User | null }) => {
   const [votes, setVotes] = React.useState<Record<string, number>>({});
   const [hasVoted, setHasVoted] = React.useState<Set<string>>(new Set());
+  const [userVotedMale, setUserVotedMale] = React.useState(false);
+  const [userVotedFemale, setUserVotedFemale] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState<StudentSpotlight | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [votingInProgress, setVotingInProgress] = React.useState<string | null>(null);
@@ -444,6 +447,24 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
         // Get all votes for the current user
         const userVotes = await spotlightVoteService.getUserVotes(user.id);
         setHasVoted(new Set(userVotes));
+        
+        // Check if user has voted for each category
+        let hasVotedForMale = false;
+        let hasVotedForFemale = false;
+        
+        for (const studentId of userVotes) {
+          const student = items.find(s => s.id === studentId);
+          if (student) {
+            if (student.gender === 'male') {
+              hasVotedForMale = true;
+            } else if (student.gender === 'female') {
+              hasVotedForFemale = true;
+            }
+          }
+        }
+        
+        setUserVotedMale(hasVotedForMale);
+        setUserVotedFemale(hasVotedForFemale);
 
         // Get vote counts for all students
         const voteCounts: Record<string, number> = {};
@@ -492,9 +513,19 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
     return universities[universityId || ''] || 'University';
   };
 
-  const handleVote = async (studentId: string) => {
+  const handleVote = async (studentId: string, category: 'male' | 'female') => {
     if (!user) return;
-    if (hasVoted.has(studentId)) return;
+    
+    // Check if user has already voted in this category
+    if (category === 'male' && userVotedMale) {
+      alert('You have already voted for a male candidate. You can only vote for one candidate per category.');
+      return;
+    }
+    
+    if (category === 'female' && userVotedFemale) {
+      alert('You have already voted for a female candidate. You can only vote for one candidate per category.');
+      return;
+    }
     
     try {
       setVotingInProgress(studentId);
@@ -507,12 +538,37 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
         [studentId]: (prev[studentId] || 0) + 1,
       }));
       setHasVoted(prev => new Set(prev).add(studentId));
+      
+      // Update category-specific voting status
+      if (category === 'male') {
+        setUserVotedMale(true);
+      } else {
+        setUserVotedFemale(true);
+      }
     } catch (error) {
       console.error('Error voting:', error);
+      alert(error instanceof Error ? error.message : 'Error voting. Please try again.');
       // Re-check if user has voted (in case of race condition)
-      const hasVoted = await spotlightVoteService.checkUserHasVoted(studentId, user.id);
-      if (hasVoted) {
-        setHasVoted(prev => new Set(prev).add(studentId));
+      const userVotes = await spotlightVoteService.getUserVotes(user.id);
+      if (userVotes.length > 0) {
+        setHasVoted(new Set(userVotes));
+        // Recheck voting status per category
+        let hasVotedForMale = false;
+        let hasVotedForFemale = false;
+        
+        for (const studentId of userVotes) {
+          const student = items.find(s => s.id === studentId);
+          if (student) {
+            if (student.gender === 'male') {
+              hasVotedForMale = true;
+            } else if (student.gender === 'female') {
+              hasVotedForFemale = true;
+            }
+          }
+        }
+        
+        setUserVotedMale(hasVotedForMale);
+        setUserVotedFemale(hasVotedForFemale);
       }
     } finally {
       setVotingInProgress(null);
@@ -603,8 +659,9 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
   // Component for rendering nominee
   const NomineeCard = ({ student }: { student: StudentSpotlight }) => {
     const studentVotes = votes[student.id] || 0;
-    const alreadyVoted = hasVoted.has(student.id);
     const isMale = student.gender === 'male';
+    const categoryVoted = isMale ? userVotedMale : userVotedFemale;
+    const isVotedForThisStudent = hasVoted.has(student.id);
     
     return (
       <div className={`group flex-shrink-0 w-80 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 h-full flex flex-col bg-white border-2 ${
@@ -654,13 +711,13 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
               <i className="fas fa-eye mr-1"></i>View More
             </button>
             <button
-              onClick={() => handleVote(student.id)}
-              disabled={!user || alreadyVoted || votingInProgress === student.id}
-              title={!user ? 'Sign in to vote' : alreadyVoted ? 'You have already voted for this student' : 'Vote for this student'}
+              onClick={() => handleVote(student.id, isMale ? 'male' : 'female')}
+              disabled={!user || categoryVoted || votingInProgress === student.id}
+              title={!user ? 'Sign in to vote' : categoryVoted ? `You have already voted for a ${isMale ? 'male' : 'female'} candidate` : 'Vote for this student'}
               className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all duration-300 text-sm flex items-center justify-center gap-1 transform ${
                 !user
                   ? 'bg-gray-300 text-gray-600 cursor-not-allowed opacity-60'
-                  : alreadyVoted
+                  : categoryVoted
                   ? 'bg-gray-200 text-gray-700 cursor-not-allowed'
                   : votingInProgress === student.id
                   ? 'opacity-70 cursor-not-allowed'
@@ -673,8 +730,8 @@ const StudentSpotlightPanel = ({ items, user }: { items: StudentSpotlight[], use
                 <Spinner color="white" size="sm" />
               ) : (
                 <>
-                  <i className={`fas ${!user ? 'fa-lock' : alreadyVoted ? 'fa-check' : 'fa-thumbs-up'}`}></i>
-                  {!user ? 'Sign in' : alreadyVoted ? 'Voted' : 'Vote'}
+                  <i className={`fas ${!user ? 'fa-lock' : categoryVoted ? 'fa-check' : 'fa-thumbs-up'}`}></i>
+                  {!user ? 'Sign in' : categoryVoted ? 'Voted' : 'Vote'}
                 </>
               )}
             </button>
@@ -1104,6 +1161,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
   const [activeTab, setActiveTab] = useState('News');
   const [sectionRef, isVisible] = useScrollObserver<HTMLElement>();
   const [selectedEvent, setSelectedEvent] = React.useState<Event | null>(null);
+  const [selectedNews, setSelectedNews] = React.useState<NewsItem | null>(null);
 
   const tabs = [
     { name: 'News', icon: 'fas fa-newspaper', action: onNavigateToBlog },
@@ -1112,7 +1170,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
   ];
 
   const panels = {
-    News: <NewsPanel items={news} onNavigateToBlog={onNavigateToBlog} />,
+    News: <NewsPanel items={news} onNavigateToBlog={onNavigateToBlog} onSelectNews={setSelectedNews} />,
     Events: <EventsPanel items={events} onSelectEvent={setSelectedEvent} />,
     Jobs: <JobsPanel items={jobs} />,
   };
@@ -1242,6 +1300,14 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+        />
+      )}
+
+      {/* News Detail Modal */}
+      {selectedNews && (
+        <NewsDetailModal
+          news={selectedNews}
+          onClose={() => setSelectedNews(null)}
         />
       )}
     </section>

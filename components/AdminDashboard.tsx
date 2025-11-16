@@ -338,16 +338,46 @@ const NewsForm: React.FC<NewsFormProps> = ({ item, onSubmit, onCancel, isSubmitt
             // Upload inline images and build description with image URLs
             let finalDescription = formData.description;
             if (formData.inlineImages && formData.inlineImages.length > 0) {
-                const newInlineImages = formData.inlineImages.filter(img => img.file);
-                if (newInlineImages.length > 0) {
-                    const inlineFiles = newInlineImages.map(img => img.file);
+                // Upload all inline images (new and existing)
+                const inlineImagesToUpload: Array<{ file: File; originalIndex: number }> = [];
+                
+                // Collect only new files that need to be uploaded
+                formData.inlineImages.forEach((img, idx) => {
+                    if (img.file) {
+                        inlineImagesToUpload.push({ file: img.file, originalIndex: idx });
+                    }
+                });
+                
+                // If there are new images to upload
+                if (inlineImagesToUpload.length > 0) {
+                    const inlineFiles = inlineImagesToUpload.map(item => item.file);
                     const timestamp = new Date().getTime();
                     const newsFolder = `${item?.id || timestamp}`;
                     const uploadedInlineUrls = await storageService.uploadMultipleImages(inlineFiles, 'news', newsFolder);
                     
-                    // Replace image markers with actual URLs
-                    uploadedInlineUrls.forEach((url, idx) => {
-                        finalDescription = finalDescription.replace(`[IMAGE_${idx}]`, `[INLINE_IMAGE:${url}]`);
+                    // Create a map of original index to uploaded URL
+                    const imageUrlMap: { [key: number]: string } = {};
+                    inlineImagesToUpload.forEach((item, uploadIdx) => {
+                        imageUrlMap[item.originalIndex] = uploadedInlineUrls[uploadIdx];
+                    });
+                    
+                    // Replace image markers with actual URLs using the correct mapping
+                    finalDescription = finalDescription.replace(/\[IMAGE_(\d+)\]/g, (match, imageIdx) => {
+                        const idx = parseInt(imageIdx);
+                        const url = imageUrlMap[idx];
+                        return url ? `[INLINE_IMAGE:${url}]` : match;
+                    });
+                } else if (formData.inlineImages.length > 0) {
+                    // If no new images but inline images array has URLs (for editing existing articles)
+                    // This handles the case where images already have previewUrl but no new file
+                    finalDescription = finalDescription.replace(/\[IMAGE_(\d+)\]/g, (match, imageIdx) => {
+                        const idx = parseInt(imageIdx);
+                        const img = formData.inlineImages[idx];
+                        // If previewUrl starts with http, it's already an uploaded URL
+                        if (img?.previewUrl && img.previewUrl.startsWith('http')) {
+                            return `[INLINE_IMAGE:${img.previewUrl}]`;
+                        }
+                        return match;
                     });
                 }
             }

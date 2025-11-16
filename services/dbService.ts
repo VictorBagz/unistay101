@@ -191,9 +191,32 @@ export const spotlightVoteService = {
         }
     },
 
+    async hasUserVotedForAny(userId: string): Promise<boolean> {
+        try {
+            const { data, error } = await supabase
+                .from('spotlight_votes')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', userId);
+            
+            if (error) {
+                // Table might not exist yet - return false to allow voting
+                if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                    console.warn('spotlight_votes table does not exist yet');
+                    return false;
+                }
+                console.error('Error checking if user has any votes:', error);
+                return false;
+            }
+            return (data?.length ?? 0) > 0;
+        } catch (err) {
+            console.error('Exception checking if user has any votes:', err);
+            return false;
+        }
+    },
+
     async addVote(spotlightId: string, userId: string): Promise<SpotlightVoteRow> {
         try {
-            // First check if user already voted
+            // First check if user already voted for this specific student
             const hasVoted = await this.checkUserHasVoted(spotlightId, userId);
             if (hasVoted) {
                 throw new Error('User has already voted for this student');
