@@ -25,7 +25,7 @@ export const setArticleMetaTags = (article: {
     // Set Open Graph meta tags for social media sharing
     const metaTags = [
         { property: 'og:title', content: article.title },
-        { property: 'og:description', content: article.description.substring(0, 160) },
+        { property: 'og:description', content: article.title },
         { property: 'og:image', content: imageUrl },
         { property: 'og:image:width', content: '800' },
         { property: 'og:image:height', content: '600' },
@@ -34,7 +34,7 @@ export const setArticleMetaTags = (article: {
         { property: 'og:type', content: 'article' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: article.title },
-        { name: 'twitter:description', content: article.description.substring(0, 160) },
+        { name: 'twitter:description', content: article.title },
         { name: 'twitter:image', content: imageUrl },
     ];
 
