@@ -47,7 +47,7 @@ interface StudentSpotlight {
 }
 
 const NewsPanel = ({ items, onNavigateToBlog, onSelectNews }: { items: NewsItem[], onNavigateToBlog: () => void, onSelectNews?: (news: NewsItem) => void }) => {
-  const sortedItems = sortByTimestamp(items);
+  const sortedItems = sortByTimestamp(items).slice(0, 6);
   
   return (
     <div className="space-y-4">
@@ -83,7 +83,7 @@ const EventsPanel = ({ items, onSelectEvent }: { items: Event[], onSelectEvent?:
     const ta = taVal ? new Date(taVal).getTime() : (a.date ? new Date(a.date).getTime() : 0);
     const tb = tbVal ? new Date(tbVal).getTime() : (b.date ? new Date(b.date).getTime() : 0);
     return tb - ta;
-  });
+  }).slice(0, 6);
 
   return (
     <>
@@ -142,7 +142,7 @@ const EventsPanel = ({ items, onSelectEvent }: { items: Event[], onSelectEvent?:
 
 const JobsPanel = ({ items }: { items: Job[] }) => (
     <div className="space-y-4">
-    {items.map(job => (
+    {items.slice(0, 6).map(job => (
       <div key={job.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
         <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <img src={job.imageUrl} alt={job.company} className="w-12 h-12 object-contain"/>

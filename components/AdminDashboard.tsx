@@ -1803,7 +1803,23 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
     const [isAdding, setIsAdding] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
     const { notify } = useNotifier();
+    
+    // Pagination: 10 items per page for Hostels section
+    const itemsPerPage = title === 'Manage Hostels' ? 10 : items.length;
+    
+    // Filter items based on search query (for Hostels only)
+    const filteredItems = title === 'Manage Hostels' 
+        ? items.filter(item => 
+            item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.location?.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : items;
+    
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+    const displayedItems = filteredItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
     const handleEdit = (item) => {
         setEditingItem(item);
@@ -1833,6 +1849,11 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
     const handleCancel = () => {
         setEditingItem(null);
         setIsAdding(false);
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        setCurrentPage(0); // Reset to first page when searching
     };
 
     const handleSubmit = async (item) => {
@@ -1872,8 +1893,49 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
                     <i className="fas fa-plus mr-2"></i>Add New
                 </Button>
             </div>
+            
+            {/* Search Bar for Hostels */}
+            {title === 'Manage Hostels' && (
+                <div className="bg-white shadow rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                        <i className="fas fa-search text-gray-400 text-lg"></i>
+                        <input
+                            type="text"
+                            placeholder="Search by hostel name or location..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-unistay-yellow focus:border-unistay-yellow outline-none"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="px-3 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <i className="fas fa-times"></i>
+                            </button>
+                        )}
+                    </div>
+                    {searchQuery && (
+                        <div className="text-sm text-gray-600 mt-2">
+                            Found {filteredItems.length} hostel{filteredItems.length !== 1 ? 's' : ''}
+                        </div>
+                    )}
+                </div>
+            )}
+            
             {(isAdding || editingItem) && <FormComponent {...formProps} />}
-            <div className="bg-white shadow rounded-lg overflow-x-auto">
+            
+            {/* No Results Message */}
+            {title === 'Manage Hostels' && searchQuery && filteredItems.length === 0 && (
+                <div className="bg-white shadow rounded-lg p-8 text-center">
+                    <i className="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No hostels found</h3>
+                    <p className="text-gray-500">No hostels match your search query. Try different keywords.</p>
+                </div>
+            )}
+            
+            {displayedItems.length > 0 && (
+                <div className="bg-white shadow rounded-lg overflow-x-auto">
                 <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b">
                         <tr>
@@ -1882,7 +1944,7 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map(item => (
+                        {displayedItems.map(item => (
                             <tr key={item.id} onClick={() => handleEdit(item)} className="border-b last:border-b-0 hover:bg-gray-50 cursor-pointer">
                                 {columns.map(col => (
                                    <td key={col.accessor} className="p-4 text-sm text-gray-700 align-top">
@@ -1907,6 +1969,39 @@ function ContentManager({ title, items, handler, columns, FormComponent, univers
                     </tbody>
                 </table>
             </div>
+            )}
+            
+            {/* Pagination Controls for Hostels */}
+            {title === 'Manage Hostels' && totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                    <button
+                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                        disabled={currentPage === 0}
+                        className="px-4 py-2 bg-unistay-navy text-white rounded-lg hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    >
+                        <i className="fas fa-chevron-left"></i>
+                        Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700">
+                            Page <span className="text-unistay-navy">{currentPage + 1}</span> of <span className="text-unistay-navy">{totalPages}</span>
+                        </span>
+                        <span className="text-sm text-gray-500">
+                            (Showing {displayedItems.length} of {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''})
+                        </span>
+                    </div>
+                    
+                    <button
+                        onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                        disabled={currentPage === totalPages - 1}
+                        className="px-4 py-2 bg-unistay-navy text-white rounded-lg hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                    >
+                        Next
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -2052,7 +2147,7 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
     const sections = {
         Hostels: {
             title: 'Manage Hostels',
-            items: content.hostels.items,
+            items: [...content.hostels.items].reverse(),
             handler: content.hostels.handler,
             columns: [
                 { header: 'Name', accessor: 'name' },
