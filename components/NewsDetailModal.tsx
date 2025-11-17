@@ -1,6 +1,7 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { NewsItem } from '../types';
 import { formatTimeAgo } from '../utils/dateUtils';
+import { setArticleMetaTags, resetMetaTags } from '../utils/metaTags';
 
 interface NewsDetailModalProps {
     news: NewsItem | null;
@@ -8,6 +9,8 @@ interface NewsDetailModalProps {
 }
 
 const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
+    const [copied, setCopied] = useState(false);
+
     const handleEscape = useCallback((event: KeyboardEvent) => {
         if (event.key === 'Escape') {
             onClose();
@@ -16,10 +19,14 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
 
     useEffect(() => {
         document.addEventListener('keydown', handleEscape);
+        if (news) {
+            setArticleMetaTags(news);
+        }
         return () => {
             document.removeEventListener('keydown', handleEscape);
+            resetMetaTags();
         };
-    }, [handleEscape]);
+    }, [handleEscape, news]);
 
     // Function to parse markdown-like text to HTML and handle inline images
     const renderMarkdownContent = (text: string) => {
@@ -73,7 +80,10 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
     const handleShare = (platform: 'twitter' | 'facebook' | 'linkedin' | 'whatsapp') => {
         if (!news) return;
 
-        const url = encodeURIComponent(window.location.href);
+        // Generate shareable URL with article ID as query parameter
+        const baseUrl = window.location.origin;
+        const shareUrl = `${baseUrl}?view=newsArticle&articleId=${news.id}`;
+        const url = encodeURIComponent(shareUrl);
         const title = encodeURIComponent(news.title);
         
         const shareUrls = {
@@ -84,6 +94,28 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
         };
 
         window.open(shareUrls[platform], '_blank', 'noopener,noreferrer');
+    };
+
+    const handleCopyLink = () => {
+        if (!news) return;
+
+        const baseUrl = window.location.origin;
+        const shareUrl = `${baseUrl}?view=newsArticle&articleId=${news.id}`;
+        
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = shareUrl;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
     };
 
     if (!news) return null;
@@ -160,6 +192,14 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
                                         aria-label="Share on WhatsApp"
                                     >
                                         <i className="fab fa-whatsapp"></i>
+                                    </button>
+                                    <button 
+                                        onClick={handleCopyLink}
+                                        className={`transition-colors ${copied ? 'text-green-500' : 'text-gray-600 hover:text-unistay-navy'}`}
+                                        aria-label="Copy link"
+                                        title={copied ? 'Link copied!' : 'Copy link'}
+                                    >
+                                        <i className={`fas ${copied ? 'fa-check' : 'fa-link'}`}></i>
                                     </button>
                                 </div>
                             </div>

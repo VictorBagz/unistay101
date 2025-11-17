@@ -412,6 +412,24 @@ const App = () => {
     }
   }, [currentUser, isLoading, news, jobs, roommateProfiles]);
 
+  // Handle URL parameters to navigate to specific articles when shared links are clicked
+  useEffect(() => {
+    if (isLoading) return; // Wait for data to load
+
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    const articleId = params.get('articleId');
+
+    if (view === 'newsArticle' && articleId && news.length > 0) {
+      const article = news.find(n => n.id === articleId);
+      if (article) {
+        setViewingNewsArticle(article);
+        setCurrentView('newsArticle');
+        window.scrollTo(0, 0);
+      }
+    }
+  }, [isLoading, news]);
+
 
   const refreshAllData = async () => {
     // Re-fetch all data to reflect changes made in the admin panel
