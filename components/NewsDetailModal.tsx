@@ -80,9 +80,9 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
     const handleShare = (platform: 'twitter' | 'facebook' | 'linkedin' | 'whatsapp') => {
         if (!news) return;
 
-        // Generate shareable URL with article ID as query parameter
+        // UPDATED: Use new /article/:id URL format for better social sharing
         const baseUrl = window.location.origin;
-        const shareUrl = `${baseUrl}?view=newsArticle&articleId=${news.id}`;
+        const shareUrl = `${baseUrl}/article/${news.id}`;
         const url = encodeURIComponent(shareUrl);
         const title = encodeURIComponent(news.title);
         
@@ -99,8 +99,9 @@ const NewsDetailModal = ({ news, onClose }: NewsDetailModalProps) => {
     const handleCopyLink = () => {
         if (!news) return;
 
+        // UPDATED: Use new /article/:id URL format
         const baseUrl = window.location.origin;
-        const shareUrl = `${baseUrl}?view=newsArticle&articleId=${news.id}`;
+        const shareUrl = `${baseUrl}/article/${news.id}`;
         
         navigator.clipboard.writeText(shareUrl).then(() => {
             setCopied(true);
