@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import HostelDetailModal from './components/HostelDetailModal';
 import RoommateFinder from './components/RoommateFinder';
 import BlogPage from './components/BlogPage';
+import NewsArticlePage from './components/NewsArticlePage';
 import EventsPage from './components/EventsPage';
 import JobsPage from './components/JobsPage';
 import AuthPage from './components/AuthPage';
@@ -37,7 +38,7 @@ import {
 } from './services/dbService';
 import { contactService, contactHandler } from './services/contactService';
 
-type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
+type AppView = 'main' | 'roommateFinder' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
 
 const App = () => {
@@ -49,6 +50,7 @@ const App = () => {
   const [currentView, setCurrentView] = useState<AppView>('main');
   const [selectedUniversity, setSelectedUniversity] = useState<University>(UNIVERSITIES[0]);
   const [viewingHostel, setViewingHostel] = useState<Hostel | null>(null);
+  const [viewingNewsArticle, setViewingNewsArticle] = useState<NewsItem | null>(null);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -565,6 +567,7 @@ const App = () => {
           )}
           
           {currentView === 'blog' && <BlogPage news={news} onNavigateHome={() => handleNavigation('main')} />}
+          {currentView === 'newsArticle' && <NewsArticlePage news={viewingNewsArticle} onNavigateHome={() => { setViewingNewsArticle(null); handleNavigation('blog'); }} />}
           {currentView === 'events' && <EventsPage events={events} onNavigateHome={() => handleNavigation('main')} />}
           {currentView === 'jobs' && <JobsPage jobs={jobs} onNavigateHome={() => handleNavigation('main')} />}
           
@@ -619,7 +622,7 @@ const App = () => {
 
         {viewingHostel && <HostelDetailModal hostel={viewingHostel} onClose={handleCloseModal} />}
         
-        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'profile' && (
+        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'profile' && currentView !== 'newsArticle' && (
           <>
             <div ref={contactFormRef}>
               <ContactForm />

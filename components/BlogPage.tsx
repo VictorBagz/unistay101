@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { NewsItem } from '../types';
 import Footer from './Footer';
-import NewsDetailModal from './NewsDetailModal';
+import NewsArticlePage from './NewsArticlePage';
 import { formatTimeAgo, sortByTimestamp } from '../utils/dateUtils';
 
 interface BlogPageProps {
@@ -12,7 +12,6 @@ interface BlogPageProps {
 
 const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
     const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-    
     // First, sort all news items by timestamp
     const sortedNews = sortByTimestamp(news);
     
@@ -21,6 +20,10 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
     
     // Get all other posts except the featured one
     const otherPosts = sortedNews.filter(post => post.id !== featuredPost?.id);
+
+    if (selectedNews) {
+        return <NewsArticlePage news={selectedNews} onNavigateHome={() => setSelectedNews(null)} />;
+    }
 
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
@@ -103,12 +106,13 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                     )}
                 </section>
             </main>
-            
             {/* News Detail Modal */}
-            <NewsDetailModal 
-                news={selectedNews}
-                onClose={() => setSelectedNews(null)}
-            />
+            {selectedNews && (
+                <NewsArticlePage 
+                    news={selectedNews}
+                    onNavigateHome={() => setSelectedNews(null)}
+                />
+            )}
         </div>
     );
 };
