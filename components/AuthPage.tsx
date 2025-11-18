@@ -64,7 +64,15 @@ const AuthPage = ({ onAuthSuccess, onNavigateHome }: AuthPageProps) => {
             setLoadingProvider(null);
             return;
         }
-        const requiredFields = ['name', 'email', 'password', 'contactNumber', 'universityId', 'studentNumber', 'dateOfBirth'];
+        
+        // Check if profile photo is uploaded
+        if (!profilePhoto) {
+            notify({ message: 'Please upload a profile photo.', type: 'error' });
+            setLoadingProvider(null);
+            return;
+        }
+        
+        const requiredFields = ['name', 'email', 'password', 'confirmPassword', 'contactNumber', 'universityId', 'studentNumber', 'dateOfBirth'];
         for (const field of requiredFields) {
             if (!formData[field]) {
                 notify({ message: `Please fill out all fields. ${field.replace(/([A-Z])/g, ' $1')} is missing.`, type: 'error' });
