@@ -2160,7 +2160,7 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
         },
         News: {
             title: 'Manage News',
-            items: content.news.items,
+            items: [...content.news.items].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()),
             handler: content.news.handler,
             columns: [
                 { header: 'Title', accessor: 'title' },
@@ -2171,7 +2171,12 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
         },
         Events: {
             title: 'Manage Events',
-            items: content.events.items,
+            items: [...content.events.items].sort((a, b) => {
+                // Sort by timestamp if available, otherwise by date
+                const aTime = new Date(a.timestamp || a.date || 0).getTime();
+                const bTime = new Date(b.timestamp || b.date || 0).getTime();
+                return bTime - aTime; // Latest first
+            }),
             handler: content.events.handler,
             columns: [
                 { header: 'Title', accessor: 'title' },
@@ -2206,7 +2211,7 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
         },
         Spotlights: {
             title: 'Manage Student Spotlights',
-            items: content.spotlights?.items || [],
+            items: [...(content.spotlights?.items || [])].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()),
             handler: content.spotlights?.handler,
             columns: [
                 { header: 'Name', accessor: 'name' },
