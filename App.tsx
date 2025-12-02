@@ -20,6 +20,7 @@ import ProfilePage from './components/ProfilePage';
 import Spinner from './components/Spinner';
 import Notifier from './components/Notifier';
 import { NotificationProvider } from './hooks/useNotifier';
+import { initializeLazyLoadObserver } from './utils/lazyLoadingUtils';
 
 import { 
     UNIVERSITIES, 
@@ -184,6 +185,9 @@ const App = () => {
   // --- Effects ---
   // Listen to auth state changes and load initial data
   useEffect(() => {
+    // Initialize lazy loading for images
+    initializeLazyLoadObserver({ rootMargin: '50px' });
+
     let isSubscribed = true;
 
     const initializeApp = async () => {

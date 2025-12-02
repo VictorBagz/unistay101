@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Job } from '../types';
 import JobDetailModal from './JobDetailModal';
+import LazyImage from './LazyImage';
 
 interface JobsPageProps {
   jobs: Job[];
@@ -38,7 +39,7 @@ const JobsPage = ({ jobs, onNavigateHome }: JobsPageProps) => {
                             {jobs.map((job, index) => (
                               <div key={job.id} className="flex flex-col sm:flex-row items-center gap-6 p-4 border rounded-lg hover:shadow-md hover:border-unistay-yellow transition-all duration-300" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
                                 <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <img src={job.imageUrl} alt={job.company} className="w-16 h-16 object-contain"/>
+                                    <LazyImage src={job.imageUrl} alt={job.company} className="w-16 h-16 object-contain" width={64} height={64} loading="lazy" />
                                 </div>
                                 <div className="flex-1 text-center sm:text-left">
                                   <p className="font-bold text-lg text-unistay-navy">{job.title}</p>

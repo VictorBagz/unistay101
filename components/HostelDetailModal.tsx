@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Hostel } from '../types';
 import Spinner from './Spinner';
+import LazyImage from './LazyImage';
 
 interface HostelDetailModalProps {
   hostel: Hostel;
@@ -47,7 +48,7 @@ const HostelDetailModal = ({ hostel, onClose }: HostelDetailModalProps) => {
         onClick={e => e.stopPropagation()} // Prevent modal close when clicking inside
       >
         <div className="relative">
-          <img src={hostel.imageUrl} alt={hostel.name} className="w-full h-64 object-cover rounded-t-2xl" />
+          <LazyImage src={hostel.imageUrl} alt={hostel.name} className="w-full h-64 object-cover rounded-t-2xl" loading="eager" />
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 bg-white/70 text-unistay-navy rounded-full h-10 w-10 flex items-center justify-center hover:bg-white transition-transform duration-200 hover:scale-110 z-10"

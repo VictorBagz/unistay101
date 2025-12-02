@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { NewsItem } from '../types';
 import Footer from './Footer';
 import NewsArticlePage from './NewsArticlePage';
+import LazyImage from './LazyImage';
 import { formatTimeAgo, sortByTimestamp } from '../utils/dateUtils';
 
 interface BlogPageProps {
@@ -42,7 +43,7 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                     <section className={`mb-12 group animate-fade-in ${featuredPost.featured ? 'bg-unistay-navy text-white p-8 rounded-2xl' : ''}`}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                             <div className="rounded-2xl overflow-hidden shadow-lg group-hover:shadow-2xl transition-shadow duration-300">
-                               <img src={featuredPost.imageUrl.replace('/100/100', '/600/400')} alt={featuredPost.title} className="w-full h-full object-cover" />
+                               <LazyImage src={featuredPost.imageUrl.replace('/100/100', '/600/400')} alt={featuredPost.title} className="w-full h-full object-cover" loading="lazy" />
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
@@ -78,7 +79,7 @@ const BlogPage = ({ news, onNavigateHome }: BlogPageProps) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {otherPosts.map((post, index) => (
                                  <div key={post.id} className="bg-white rounded-xl shadow-md overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300 flex flex-col" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
-                                    <img src={post.imageUrl.replace('/100/100', '/400/300')} alt={post.title} className="h-48 w-full object-cover"/>
+                                    <LazyImage src={post.imageUrl.replace('/100/100', '/400/300')} alt={post.title} className="h-48 w-full object-cover" loading="lazy" />
                                     <div className="p-6 flex flex-col flex-grow">
                                         <h4 className="text-xl font-bold text-unistay-navy flex-grow group-hover:text-unistay-yellow transition-colors">{post.title}</h4>
                                         <div className="flex justify-between items-center mt-2 mb-4">

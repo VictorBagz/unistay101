@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Event } from '../types';
 import EventDetailModal from './EventDetailModal';
+import LazyImage from './LazyImage';
 
 interface EventsPageProps {
   events: Event[];
@@ -38,7 +39,7 @@ const EventsPage = ({ events, onNavigateHome }: EventsPageProps) => {
                         {sortedEvents.map((event, index) => (
                             <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300" style={{ animation: 'fade-in-up 0.5s ease-out forwards', animationDelay: `${index * 100}ms` }}>
                                 <div className="relative cursor-pointer" onClick={() => setFullImageUrl(event.imageUrl)}>
-                                    <img src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover group-hover:opacity-75 transition-opacity duration-300" />
+                                    <LazyImage src={event.imageUrl} alt={event.title} className="h-56 w-full object-cover group-hover:opacity-75 transition-opacity duration-300" loading="lazy" />
                                     <div className="absolute top-4 left-4 bg-unistay-yellow text-unistay-navy text-center rounded-lg px-4 py-2 shadow-lg">
                                         <p className="font-extrabold text-2xl">{event.day}</p>
                                         <p className="font-bold text-sm leading-tight">{event.month}</p>

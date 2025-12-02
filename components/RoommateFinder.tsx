@@ -1,9 +1,9 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { University, RoommateProfile, User } from '../types';
 import { UNIVERSITIES, GENDERS, SEEKING_GENDERS, LEASE_DURATIONS, STUDY_SCHEDULES, CLEANLINESS_LEVELS, GUEST_FREQUENCIES, DRINKING_HABITS } from '../constants';
 import Spinner from './Spinner';
+import LazyImage from './LazyImage';
 
 // --- Helper Components ---
 // FIX: Add explicit types to helper components to fix type inference issues.
@@ -183,7 +183,7 @@ const MatchCard = ({ profile, score, universityName }) => {
     return (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 h-full flex flex-col border-4 border-transparent hover:border-unistay-yellow">
             <div className="relative">
-                <img src={profile.imageUrl} alt={profile.name} className="h-56 w-full object-cover"/>
+                <LazyImage src={profile.imageUrl} alt={profile.name} className="h-56 w-full object-cover" loading="lazy" />
                 <div className="absolute top-3 right-3 bg-unistay-navy text-white rounded-full h-16 w-16 flex flex-col items-center justify-center font-bold shadow-lg">
                     <span className="text-2xl">{score}%</span>
                     <span className="text-xs">Match</span>

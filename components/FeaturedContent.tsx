@@ -3,12 +3,13 @@
 import React, { useState, useRef } from 'react';
 import { University, Hostel } from '../types';
 import { useScrollObserver } from '../hooks/useScrollObserver';
+import LazyImage from './LazyImage';
 
 // Reusable Hostel Card Component
 const HostelCard = ({ hostel, onViewHostel, onSaveToggle, isSaved }: { hostel: Hostel; onViewHostel: (hostel: Hostel) => void; onSaveToggle: (hostelId: string) => void; isSaved: boolean; }) => (
   <div className="bg-white rounded-2xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
     <div className="relative">
-      <img src={hostel.imageUrl} alt={hostel.name} className="h-56 w-full object-cover"/>
+      <LazyImage src={hostel.imageUrl} alt={hostel.name} className="h-56 w-full object-cover" loading="lazy" />
       <button
         onClick={(e) => {
             e.stopPropagation(); // Prevent card's onViewHostel from firing
@@ -71,7 +72,7 @@ const UniversitySelector = ({ universities, selectedUniversity, onSelect }: Univ
                 : 'bg-white text-unistay-navy border-gray-200 hover:border-unistay-navy'
             }`}
           >
-            <img src={uni.logoUrl} alt={`${uni.name} Logo`} className="w-7 h-7 rounded-full object-cover" />
+            <LazyImage src={uni.logoUrl} alt={`${uni.name} Logo`} className="w-7 h-7 rounded-full object-cover" width={28} height={28} loading="lazy" />
             {uni.name}
           </button>
         ))}
