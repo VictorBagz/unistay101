@@ -1,5 +1,6 @@
 import { StorageError } from '@supabase/storage-js';
 import { supabase } from './supabase';
+import { imageOptimizationService } from './imageOptimizationService';
 
 type ContentType = 'hostels' | 'events' | 'news' | 'jobs';
 
@@ -39,6 +40,24 @@ export const storageService = {
                 throw new Error('Invalid file type. Supported types: jpg, jpeg, png, gif, webp, avif');
             }
 
+            // Optimize image before upload (compress to reduce file size)
+            let fileToUpload = file;
+            try {
+                const originalSize = file.size;
+                fileToUpload = await imageOptimizationService.compressImage(file, 1920, 0.78);
+                const compressedSize = fileToUpload.size;
+                
+                if (compressedSize < originalSize) {
+                    const stats = imageOptimizationService.getCompressionStats(originalSize, compressedSize);
+                    console.log(
+                        `Image optimized: ${file.name} - ${stats.originalSize} → ${stats.compressedSize} (${stats.percentReduction}% reduction)`
+                    );
+                }
+            } catch (compressionError) {
+                console.warn('Image compression failed, uploading original:', compressionError);
+                // Continue with original file if compression fails
+            }
+
             // Create a unique filename
             const timestamp = new Date().getTime();
             const randomString = Math.random().toString(36).substring(2);
@@ -54,10 +73,10 @@ export const storageService = {
             // Upload the file with proper content type
             const { data, error } = await supabase.storage
                 .from(bucket)
-                .upload(uploadPath, file, {
+                .upload(uploadPath, fileToUpload, {
                     cacheControl: '3600',
                     upsert: true,
-                    contentType: file.type
+                    contentType: fileToUpload.type
                 });
 
             if (error) {
