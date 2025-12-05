@@ -79,18 +79,16 @@ const ServiceDetail = ({ service, universityName, onBack }: ServiceDetailProps) 
 interface ServicesProps {
   services: Service[];
   selectedUniversity: University;
+  onServiceSelect?: (service: Service) => void;
 }
 
-const Services = ({ services, selectedUniversity }: ServicesProps) => {
-  const [activeService, setActiveService] = useState<Service | null>(null);
+const Services = ({ services, selectedUniversity, onServiceSelect }: ServicesProps) => {
   const [sectionRef, isVisible] = useScrollObserver<HTMLElement>();
   
   const handleSelectService = (service: Service) => {
-    setActiveService(service);
-  };
-
-  const handleBack = () => {
-    setActiveService(null);
+    if (onServiceSelect) {
+      onServiceSelect(service);
+    }
   };
 
   return (
@@ -103,32 +101,19 @@ const Services = ({ services, selectedUniversity }: ServicesProps) => {
 
         <div className="relative min-h-[400px]">
           {/* Grid View */}
-          <div className={`transition-all duration-500 ease-in-out ${activeService ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {services.map((service, index) => (
-                  // FIX: Wrap ServiceCard in a div and add the key here to satisfy React's requirement for keys on list items.
-                  <div key={service.id}>
-                    <ServiceCard
-                      service={service} 
-                      onClick={() => handleSelectService(service)}
-                      index={index}
-                      isVisible={isVisible && !activeService}
-                    />
-                  </div>
-                ))}
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {services.map((service, index) => (
+              // FIX: Wrap ServiceCard in a div and add the key here to satisfy React's requirement for keys on list items.
+              <div key={service.id}>
+                <ServiceCard
+                  service={service} 
+                  onClick={() => handleSelectService(service)}
+                  index={index}
+                  isVisible={isVisible}
+                />
+              </div>
+            ))}
           </div>
-         
-          {/* Detail View */}
-          {activeService && (
-            <div className={`absolute top-0 left-0 w-full transition-opacity duration-500 ease-in-out ${activeService ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-              <ServiceDetail
-                service={activeService}
-                universityName={selectedUniversity.name}
-                onBack={handleBack}
-              />
-            </div>
-          )}
         </div>
       </div>
     </section>

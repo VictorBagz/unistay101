@@ -6,6 +6,7 @@ import Hero from './components/Hero';
 import FeaturedContent from './components/FeaturedContent';
 import CommunityHub from './components/CommunityHub';
 import Services from './components/Services';
+import ServicePage from './components/ServicePage';
 import ContactForm from './components/ContactForm';
 import Footer from './components/Footer';
 import HostelDetailModal from './components/HostelDetailModal';
@@ -40,7 +41,7 @@ import {
 } from './services/dbService';
 import { contactService, contactHandler } from './services/contactService';
 
-type AppView = 'main' | 'roommateFinder' | 'roommateMatch' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
+type AppView = 'main' | 'roommateFinder' | 'roommateMatch' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile' | 'service';
 
 
 const App = () => {
@@ -53,6 +54,7 @@ const App = () => {
   const [selectedUniversity, setSelectedUniversity] = useState<University>(UNIVERSITIES[0]);
   const [viewingHostel, setViewingHostel] = useState<Hostel | null>(null);
   const [viewingNewsArticle, setViewingNewsArticle] = useState<NewsItem | null>(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -479,6 +481,11 @@ const App = () => {
     window.scrollTo(0, 0);
   };
 
+  const handleServiceSelect = (service: any) => {
+    setSelectedService(service);
+    handleNavigation('service');
+  };
+
   // --- Save Hostel Handler ---
   const handleToggleSaveHostel = (hostelId: string) => {
     if (!currentUser) {
@@ -585,7 +592,7 @@ const App = () => {
                 studentDealsRef={studentDealsRef}
                 confessionHandler={confessionHandler}
               />
-              <Services services={SERVICES} selectedUniversity={selectedUniversity} />
+              <Services services={SERVICES} selectedUniversity={selectedUniversity} onServiceSelect={handleServiceSelect} />
             </>
           )}
           
@@ -653,11 +660,19 @@ const App = () => {
               />
           )}
 
+          {currentView === 'service' && selectedService && (
+            <ServicePage
+              service={selectedService}
+              university={selectedUniversity}
+              onNavigateHome={() => handleNavigation('main')}
+            />
+          )}
+
         </main>
 
         {viewingHostel && <HostelDetailModal hostel={viewingHostel} onClose={handleCloseModal} />}
         
-        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'roommateMatch' && currentView !== 'profile' && currentView !== 'newsArticle' && (
+        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'roommateMatch' && currentView !== 'profile' && currentView !== 'newsArticle' && currentView !== 'service' && (
           <>
             <div ref={contactFormRef}>
               <ContactForm />
