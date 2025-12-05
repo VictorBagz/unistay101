@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Service, University } from '../types';
 import { SERVICE_PROVIDERS_BY_UNIVERSITY } from '../constants/serviceProviders';
 import { UNIVERSITIES } from '../constants';
@@ -11,6 +11,11 @@ interface ServicePageProps {
 
 const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) => {
   const [selectedUniversity, setSelectedUniversity] = useState<string>(university.name);
+
+  // Update selectedUniversity when the university prop changes
+  useEffect(() => {
+    setSelectedUniversity(university.name);
+  }, [university.name]);
 
   const getServiceColor = (serviceId: string) => {
     const colors: Record<string, string> = {
