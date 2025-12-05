@@ -43,10 +43,37 @@ const createCrudService = <T extends { id: string }>(tableName: string) => {
 
         // For roommate profiles, which are "set" (upsert)
         async set(item: T): Promise<void> {
-            const { error } = await supabase.from(tableName).upsert(item, { onConflict: 'id' });
-            if (error) {
-                console.error(`Error upserting to ${tableName}:`, error);
-                throw error;
+            // First, try to update existing record by id
+            const { data: existingData, error: selectError } = await supabase
+                .from(tableName)
+                .select('id')
+                .eq('id', item.id)
+                .single();
+            
+            if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
+                console.error(`Error checking for existing record in ${tableName}:`, selectError);
+                throw selectError;
+            }
+
+            if (existingData) {
+                // Record exists, update it
+                const { error: updateError } = await supabase
+                    .from(tableName)
+                    .update(item)
+                    .eq('id', item.id);
+                if (updateError) {
+                    console.error(`Error updating ${tableName}:`, updateError);
+                    throw updateError;
+                }
+            } else {
+                // Record doesn't exist, insert it
+                const { error: insertError } = await supabase
+                    .from(tableName)
+                    .insert([item]);
+                if (insertError) {
+                    console.error(`Error inserting to ${tableName}:`, insertError);
+                    throw insertError;
+                }
             }
         },
 

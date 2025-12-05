@@ -62,8 +62,8 @@ export const setupLazyLoadObserver = (
         if (src && !img.src) {
           img.src = src;
         }
-        if (srcSet && !img.srcSet) {
-          img.srcSet = srcSet;
+        if (srcSet && !(img as any).srcSet) {
+          (img as any).srcSet = srcSet;
         }
 
         img.classList.remove('lazy');
@@ -106,7 +106,7 @@ export const observeImage = (img: HTMLImageElement): void => {
     const src = img.dataset.src;
     const srcSet = img.dataset.srcset;
     if (src) img.src = src;
-    if (srcSet) img.srcSet = srcSet;
+    if (srcSet) (img as any).srcSet = srcSet;
   }
 };
 
