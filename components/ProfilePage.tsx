@@ -3,6 +3,7 @@ import { User, RoommateProfile, University, Hostel } from '../types';
 import Spinner from './Spinner';
 import { useNotifier } from '../hooks/useNotifier';
 import { authService } from '../services/authService';
+import ConnectionRequests from './ConnectionRequests';
 
 type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
@@ -20,6 +21,7 @@ interface ProfilePageProps {
     add: (content: string) => Promise<void>;
     remove: (id: string) => Promise<void>;
   };
+  allProfiles?: RoommateProfile[];
 }
 
 const ProfileStatCard = ({ icon, label, value }) => (
@@ -45,7 +47,8 @@ const ProfilePage = ({
     onNavigate,
     onDataChange,
     confessions = [],
-    confessionHandler
+    confessionHandler,
+    allProfiles = []
 }: ProfilePageProps) => {
     const [isUploading, setIsUploading] = useState(false);
     const [confessionContent, setConfessionContent] = useState('');
@@ -149,12 +152,31 @@ const ProfilePage = ({
                             </div>
                             <h2 className="text-2xl font-bold text-unistay-navy">{user.name}</h2>
                             <p className="text-gray-500">{user.email}</p>
-                            <button 
-                                onClick={() => onNavigate('roommateFinder')}
-                                className="mt-6 w-full bg-unistay-navy text-white font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition-colors"
-                            >
-                                {profile ? 'Edit Roommate Profile' : 'Create Roommate Profile'}
-                            </button>
+                            {profile ? (
+                                <div className="mt-6 space-y-3">
+                                    <button 
+                                        onClick={() => onNavigate('roommateMatch')}
+                                        className="w-full bg-unistay-yellow text-unistay-navy font-bold py-2 px-6 rounded-full hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <i className="fas fa-users"></i>
+                                        Find a Roommate
+                                    </button>
+                                    <button 
+                                        onClick={() => onNavigate('roommateFinder')}
+                                        className="w-full bg-gray-200 text-unistay-navy font-bold py-2 px-6 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                        Edit Profile
+                                    </button>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => onNavigate('roommateFinder')}
+                                    className="mt-6 w-full bg-unistay-navy text-white font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition-colors"
+                                >
+                                    Create Roommate Profile
+                                </button>
+                            )}
                         </div>
 
                          <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -194,10 +216,19 @@ const ProfilePage = ({
                          <div className="bg-white rounded-2xl shadow-xl p-6">
                             <h3 className="text-xl font-bold text-unistay-navy mb-4">Quick Links</h3>
                             <div className="space-y-3">
-                                <button onClick={() => onNavigate('roommateFinder')} className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-gray-50 transition-colors">
+                                {profile && (
+                                    <button onClick={() => onNavigate('roommateMatch')} className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-unistay-yellow/10 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <i className="fas fa-heart text-unistay-navy"></i>
+                                            <span className="font-semibold">Find a Roommate</span>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-gray-400"></i>
+                                    </button>
+                                )}
+                                <button onClick={() => onNavigate('roommateFinder')} className="flex items-center justify-between w-full p-4 rounded-lg hover:bg-unistay-yellow/10 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <i className="fas fa-users text-unistay-navy"></i>
-                                        <span className="font-semibold">My Roommate Matches</span>
+                                        <span className="font-semibold">{profile ? 'Edit Roommate Profile' : 'Create Roommate Profile'}</span>
                                     </div>
                                     <i className="fas fa-chevron-right text-gray-400"></i>
                                 </button>
@@ -248,6 +279,26 @@ const ProfilePage = ({
                          </div>
                     </div>
                 </div>
+
+                {/* Roommate Connection Requests Section */}
+                {profile && (
+                    <div className="mt-8 space-y-8">
+                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-unistay-navy flex items-center gap-2">
+                                    <i className="fas fa-heart text-red-500"></i>
+                                    Roommate Connection Requests
+                                </h3>
+                            </div>
+                            <ConnectionRequests
+                                userId={user.id}
+                                allProfiles={allProfiles}
+                                universities={universities}
+                                onRequestHandled={onDataChange}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Anonymous Confessions Section */}
                 <div className="mt-8 space-y-8">

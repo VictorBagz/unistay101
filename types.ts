@@ -99,6 +99,19 @@ export interface RoommateProfile {
     guestFrequency?: 'Rarely' | 'Sometimes' | 'Often';
     hobbies?: string; // comma separated string
     seekingGender?: 'Male' | 'Female' | 'Any';
+    roommateStatus?: 'no-roommate' | 'roomies' | 'pending-request'; // Roommate status
+}
+
+// Connection Request for roommates
+export interface ConnectionRequest {
+    id: string;
+    senderId: string; // User who sent the request
+    senderName?: string;
+    senderImage?: string;
+    recipientId: string; // User who receives the request
+    status: 'pending' | 'accepted' | 'rejected'; // Request status
+    createdAt: string; // ISO date string
+    respondedAt?: string; // When recipient responded
 }
 
 

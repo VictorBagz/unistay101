@@ -10,6 +10,7 @@ import ContactForm from './components/ContactForm';
 import Footer from './components/Footer';
 import HostelDetailModal from './components/HostelDetailModal';
 import RoommateFinder from './components/RoommateFinder';
+import RoommateMatchPage from './components/RoommateMatchPage';
 import BlogPage from './components/BlogPage';
 import NewsArticlePage from './components/NewsArticlePage';
 import EventsPage from './components/EventsPage';
@@ -39,7 +40,7 @@ import {
 } from './services/dbService';
 import { contactService, contactHandler } from './services/contactService';
 
-type AppView = 'main' | 'roommateFinder' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
+type AppView = 'main' | 'roommateFinder' | 'roommateMatch' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
 
 
 const App = () => {
@@ -601,6 +602,17 @@ const App = () => {
               profiles={roommateProfiles}
               universities={UNIVERSITIES}
               onNavigateHome={() => handleNavigation('main')}
+              onNavigateToProfile={() => handleNavigation('profile')}
+            />
+          )}
+
+          {currentView === 'roommateMatch' && currentUser && (
+            <RoommateMatchPage
+              currentUser={roommateProfiles.find(p => p.id === currentUser.id) || null}
+              profiles={roommateProfiles}
+              universities={UNIVERSITIES}
+              onNavigateHome={() => handleNavigation('main')}
+              onNavigateToProfile={() => handleNavigation('profile')}
             />
           )}
           
@@ -637,6 +649,7 @@ const App = () => {
                   onToggleSaveHostel={handleToggleSaveHostel}
                   confessions={confessions}
                   confessionHandler={confessionHandler}
+                  allProfiles={roommateProfiles}
               />
           )}
 
@@ -644,7 +657,7 @@ const App = () => {
 
         {viewingHostel && <HostelDetailModal hostel={viewingHostel} onClose={handleCloseModal} />}
         
-        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'profile' && currentView !== 'newsArticle' && (
+        {currentView !== 'admin' && currentView !== 'auth' && currentView !== 'roommateFinder' && currentView !== 'roommateMatch' && currentView !== 'profile' && currentView !== 'newsArticle' && (
           <>
             <div ref={contactFormRef}>
               <ContactForm />

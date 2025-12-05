@@ -273,9 +273,10 @@ interface RoommateFinderProps {
   profiles: RoommateProfile[];
   universities: University[];
   onNavigateHome: () => void;
+  onNavigateToProfile: () => void;
 }
 
-const RoommateFinder = ({ currentUser, currentUserProfile, onProfileUpdate, profiles, universities, onNavigateHome }: RoommateFinderProps) => {
+const RoommateFinder = ({ currentUser, currentUserProfile, onProfileUpdate, profiles, universities, onNavigateHome, onNavigateToProfile }: RoommateFinderProps) => {
     const [isEditing, setIsEditing] = useState(false);
 
     // A profile is considered incomplete if essential fields used for matching are missing.
@@ -288,6 +289,8 @@ const RoommateFinder = ({ currentUser, currentUserProfile, onProfileUpdate, prof
     const handleProfileUpdated = async (profileData) => {
         await onProfileUpdate(profileData);
         setIsEditing(false); // Hide form after successful update
+        // Redirect to profile page after successful profile completion/update
+        onNavigateToProfile();
     }
     
     return (

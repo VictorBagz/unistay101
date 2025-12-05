@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Hostel, NewsItem, Event, Job, RoommateProfile, StudentDeal } from '../types';
+import { Hostel, NewsItem, Event, Job, RoommateProfile, StudentDeal, ConnectionRequest } from '../types';
 
 // Generic CRUD factory for the Supabase database
 const createCrudService = <T extends { id: string }>(tableName: string) => {
@@ -92,6 +92,218 @@ export const newsService = createCrudService<NewsItem>('news');
 export const eventService = createCrudService<Event>('events');
 export const jobService = createCrudService<Job>('jobs');
 export const roommateProfileService = createCrudService<RoommateProfile>('profiles');
+
+// Connection Request Service for roommate matching
+export const connectionRequestService = {
+    async sendRequest(senderId: string, recipientId: string, senderName?: string, senderImage?: string): Promise<ConnectionRequest> {
+        try {
+            const { data, error } = await supabase.from('connection_requests').insert([
+                {
+                    sender_id: senderId,
+                    recipient_id: recipientId,
+                    sender_name: senderName,
+                    sender_image: senderImage,
+                    status: 'pending',
+                    created_at: new Date().toISOString(),
+                }
+            ]).select();
+            if (error) {
+                console.error('Error sending connection request:', error);
+                // If table doesn't exist, provide helpful message
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created. Please run the SQL schema setup.');
+                }
+                throw error;
+            }
+            return {
+                id: data[0].id,
+                senderId: data[0].sender_id,
+                senderName: data[0].sender_name,
+                senderImage: data[0].sender_image,
+                recipientId: data[0].recipient_id,
+                status: data[0].status,
+                createdAt: data[0].created_at,
+                respondedAt: data[0].responded_at,
+            } as ConnectionRequest;
+        } catch (err) {
+            console.error('Error in sendRequest:', err);
+            throw err;
+        }
+    },
+
+    async getReceivedRequests(userId: string): Promise<ConnectionRequest[]> {
+        try {
+            const { data, error } = await supabase
+                .from('connection_requests')
+                .select('*')
+                .eq('recipient_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) {
+                console.error('Error fetching received requests:', error);
+                // Return empty array if table doesn't exist
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                    return [];
+                }
+                throw error;
+            }
+            return (data || []).map(r => ({
+                id: r.id,
+                senderId: r.sender_id,
+                senderName: r.sender_name,
+                senderImage: r.sender_image,
+                recipientId: r.recipient_id,
+                status: r.status,
+                createdAt: r.created_at,
+                respondedAt: r.responded_at,
+            }));
+        } catch (err) {
+            console.error('Error in getReceivedRequests:', err);
+            return [];
+        }
+    },
+
+    async getSentRequests(userId: string): Promise<ConnectionRequest[]> {
+        try {
+            const { data, error } = await supabase
+                .from('connection_requests')
+                .select('*')
+                .eq('sender_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) {
+                console.error('Error fetching sent requests:', error);
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                    return [];
+                }
+                throw error;
+            }
+            return (data || []).map(r => ({
+                id: r.id,
+                senderId: r.sender_id,
+                senderName: r.sender_name,
+                senderImage: r.sender_image,
+                recipientId: r.recipient_id,
+                status: r.status,
+                createdAt: r.created_at,
+                respondedAt: r.responded_at,
+            }));
+        } catch (err) {
+            console.error('Error in getSentRequests:', err);
+            return [];
+        }
+    },
+
+    async acceptRequest(requestId: string, senderId: string, recipientId: string): Promise<void> {
+        try {
+            // Update request status to accepted
+            const { error: updateError } = await supabase.from('connection_requests').update({
+                status: 'accepted',
+                responded_at: new Date().toISOString(),
+            }).eq('id', requestId);
+            
+            if (updateError) {
+                console.error('Error accepting connection request:', updateError);
+                if (updateError.message?.includes('relation') || updateError.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                }
+                throw updateError;
+            }
+
+            // Update both users' profiles to reflect roommate status
+            const { error: senderError } = await supabase.from('profiles').update({
+                roommate_status: 'roomies'
+            }).eq('id', senderId);
+
+            const { error: recipientError } = await supabase.from('profiles').update({
+                roommate_status: 'roomies'
+            }).eq('id', recipientId);
+
+            if (senderError || recipientError) {
+                console.error('Error updating roommate status:', senderError || recipientError);
+                throw senderError || recipientError;
+            }
+        } catch (err) {
+            console.error('Error in acceptRequest:', err);
+            throw err;
+        }
+    },
+
+    async rejectRequest(requestId: string): Promise<void> {
+        try {
+            const { error } = await supabase.from('connection_requests').update({
+                status: 'rejected',
+                responded_at: new Date().toISOString(),
+            }).eq('id', requestId);
+            
+            if (error) {
+                console.error('Error rejecting connection request:', error);
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                }
+                throw error;
+            }
+        } catch (err) {
+            console.error('Error in rejectRequest:', err);
+            throw err;
+        }
+    },
+
+    async checkRequestExists(senderId: string, recipientId: string): Promise<ConnectionRequest | null> {
+        try {
+            const { data, error } = await supabase
+                .from('connection_requests')
+                .select('*')
+                .eq('sender_id', senderId)
+                .eq('recipient_id', recipientId)
+                .in('status', ['pending', 'accepted'])
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+                console.error('Error checking request:', error);
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                    return null;
+                }
+                throw error;
+            }
+
+            if (data) {
+                return {
+                    id: data.id,
+                    senderId: data.sender_id,
+                    senderName: data.sender_name,
+                    senderImage: data.sender_image,
+                    recipientId: data.recipient_id,
+                    status: data.status,
+                    createdAt: data.created_at,
+                    respondedAt: data.responded_at,
+                };
+            }
+
+            return null;
+        } catch (err) {
+            console.error('Error in checkRequestExists:', err);
+            return null;
+        }
+    },
+
+    async cancelRequest(requestId: string): Promise<void> {
+        try {
+            const { error } = await supabase.from('connection_requests').delete().eq('id', requestId);
+            if (error) {
+                console.error('Error canceling connection request:', error);
+                if (error.message?.includes('relation') || error.message?.includes('connection_requests')) {
+                    console.warn('Connection requests table not yet created.');
+                }
+                throw error;
+            }
+        } catch (err) {
+            console.error('Error in cancelRequest:', err);
+            throw err;
+        }
+    }
+};
 
 // Student spotlight service
 interface StudentSpotlightRow {
