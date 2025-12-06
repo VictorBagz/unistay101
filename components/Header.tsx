@@ -219,25 +219,52 @@ const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notification
           </div>
         </div>
       </div>
-       {/* Mobile Menu */}
-      <div className={`md:hidden bg-unistay-navy/95 backdrop-blur-sm overflow-hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96' : 'max-h-0'}`}>
-        <nav className="flex flex-col items-center space-y-4 py-4">
-          {navLinks.map((item) => (
-            <button 
-              key={item.text} 
-              onClick={() => item.action ? (item.action(), setMobileMenuOpen(false)) : handleMobileNav(item.view!)}
-              className={`font-medium text-lg ${item.view && isActive(item.view) ? 'text-unistay-yellow' : 'text-white'}`}
-            >
-              {item.text}
-            </button>
-          ))}
-          {!user && (
-               <button onClick={() => handleMobileNav('auth')} className="bg-unistay-yellow text-unistay-navy font-bold py-2 px-8 rounded-full mt-2">
-                  Login
-              </button>
-          )}
-        </nav>
-      </div>
+            {/* Mobile Menu - slide-in panel from right */}
+            <div className="md:hidden">
+                {/* Backdrop */}
+                <div
+                    className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden={!mobileMenuOpen}
+                />
+
+                {/* Panel */}
+                <aside
+                    className={`fixed top-0 right-0 h-full w-4/5 max-w-xs bg-unistay-navy text-white z-50 transform transition-transform duration-300 ease-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-hidden={!mobileMenuOpen}
+                >
+                    <div className="p-4 h-full flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <div />
+                            <button onClick={() => setMobileMenuOpen(false)} className="text-white text-2xl p-2" aria-label="Close menu">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <nav className="flex flex-col gap-4 mt-2">
+                            {navLinks.map((item) => (
+                                <button
+                                    key={item.text}
+                                    onClick={() => item.action ? (item.action(), setMobileMenuOpen(false)) : handleMobileNav(item.view!)}
+                                    className={`w-full text-left font-medium text-lg px-2 py-3 rounded-md transition-colors ${item.view && isActive(item.view) ? 'text-unistay-yellow' : 'text-white hover:text-unistay-yellow'}`}
+                                >
+                                    {item.text}
+                                </button>
+                            ))}
+
+                            {!user && (
+                                <button onClick={() => { handleMobileNav('auth'); }} className="mt-4 bg-unistay-yellow text-unistay-navy font-bold py-2 px-6 rounded-full w-full">
+                                    Login
+                                </button>
+                            )}
+                        </nav>
+
+                        <div className="mt-auto" />
+                    </div>
+                </aside>
+            </div>
     </header>
   );
 };
