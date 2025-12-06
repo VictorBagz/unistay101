@@ -155,7 +155,7 @@ const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notification
   
     const navLinks: { text: string; view?: AppView; action?: () => void }[] = [
         { text: 'Hostels', view: 'main' },
-        { text: 'Roommates', view: 'roommateFinder' },
+        { text: 'Roommates', action: () => onNavigate('roommateMatch') },
         { text: 'Services', action: onScrollToServices },
         { text: 'Spotlight', action: onScrollToSpotlight },
         { text: 'Contact Us', action: onScrollToContact },

@@ -429,11 +429,19 @@ const App = () => {
     const view = params.get('view');
     const articleId = params.get('articleId');
 
-    if (view === 'newsArticle' && articleId && news.length > 0) {
-      const article = news.find(n => n.id === articleId);
-      if (article) {
-        setViewingNewsArticle(article);
-        setCurrentView('newsArticle');
+    // If a view param is provided, navigate to it. Special-case newsArticle which may include articleId.
+    if (view) {
+      if (view === 'newsArticle' && articleId && news.length > 0) {
+        const article = news.find(n => n.id === articleId);
+        if (article) {
+          setViewingNewsArticle(article);
+          setCurrentView('newsArticle');
+          window.scrollTo(0, 0);
+        }
+      } else {
+        // Cast cautiously to AppView; unknown values will be ignored by the rest of the app.
+        setCurrentView(view as AppView);
+        // When navigating to another view from URL, scroll to top for clarity
         window.scrollTo(0, 0);
       }
     }
@@ -475,22 +483,38 @@ const App = () => {
   
   // --- Navigation ---
   const handleNavigation = (view: AppView) => {
+    const updateURLForView = (viewName?: string, extras?: Record<string,string>) => {
+      const params = new URLSearchParams(window.location.search);
+      if (viewName) params.set('view', viewName);
+      else params.delete('view');
+      // Keep articleId only when navigating to newsArticle via explicit param
+      if (viewName !== 'newsArticle') params.delete('articleId');
+      if (extras) {
+      Object.entries(extras).forEach(([k,v]) => params.set(k,v));
+      }
+      const newUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    };
     if (view === 'admin' && isAdmin) {
-        setCurrentView('admin');
+      setCurrentView('admin');
+      updateURLForView('admin');
     } else if (view === 'spotlight') {
         // Scroll to spotlight section if on main page, otherwise navigate to main first
         if (currentView === 'main') {
             communityHubRef.current?.scrollIntoView({ behavior: 'smooth' });
+        updateURLForView('main');
         } else {
             setCurrentView('main');
             // Scroll after state update completes
             setTimeout(() => {
                 communityHubRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
+        updateURLForView('main');
         }
     } else if (view !== 'admin') {
-        setCurrentView(view);
-        window.scrollTo(0, 0);
+      setCurrentView(view);
+      updateURLForView(view);
+      window.scrollTo(0, 0);
     }
   };
 

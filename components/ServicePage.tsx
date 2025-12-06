@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Service, University } from '../types';
 import { SERVICE_PROVIDERS_BY_UNIVERSITY } from '../constants/serviceProviders';
 import { UNIVERSITIES } from '../constants';
@@ -11,6 +11,18 @@ interface ServicePageProps {
 
 const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) => {
   const [selectedUniversity, setSelectedUniversity] = useState<string>(university.name);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
 
   // Update selectedUniversity when the university prop changes
   useEffect(() => {
@@ -119,17 +131,58 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
               <h3 className="text-lg font-bold text-unistay-navy mb-2">Filter by University</h3>
               <p className="text-gray-600 text-sm">Select your university to see local service providers</p>
             </div>
-            <select
-              value={selectedUniversity}
-              onChange={(e) => setSelectedUniversity(e.target.value)}
-              className="px-4 py-3 border-2 border-gray-300 rounded-lg font-semibold text-unistay-navy focus:outline-none focus:border-unistay-yellow transition-colors cursor-pointer min-w-[280px]"
-            >
-              {Object.keys(SERVICE_PROVIDERS_BY_UNIVERSITY).map((uni) => (
-                <option key={uni} value={uni}>
-                  {uni}
-                </option>
-              ))}
-            </select>
+            {/* Custom university selector with badges */}
+            <div className="relative inline-block text-left w-full sm:w-auto">
+              <button
+                ref={null}
+                onClick={() => setDropdownOpen(prev => !prev)}
+                className="w-full sm:w-72 flex items-center justify-between gap-3 px-4 py-3 border-2 border-gray-300 rounded-lg font-semibold text-unistay-navy focus:outline-none focus:border-unistay-yellow transition-colors cursor-pointer bg-white"
+                aria-haspopup="true"
+                aria-expanded={dropdownOpen}
+              >
+                <span className="flex items-center gap-3">
+                  <img src={UNIVERSITIES.find(u => u.name === selectedUniversity)?.logoUrl} alt="logo" className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                  <span className="truncate">{selectedUniversity}</span>
+                </span>
+                <i className="fas fa-chevron-down text-gray-400"></i>
+              </button>
+
+              {dropdownOpen && (
+                <div ref={menuRef} className="absolute mt-2 w-full sm:w-96 bg-white rounded-lg shadow-lg border border-gray-100 z-50 overflow-hidden">
+                  <div className="max-h-60 overflow-y-auto">
+                    {UNIVERSITIES.map((uni) => {
+                      const providersForUni = SERVICE_PROVIDERS_BY_UNIVERSITY[uni.name as keyof typeof SERVICE_PROVIDERS_BY_UNIVERSITY];
+                      const count = providersForUni && providersForUni[service.id as keyof typeof providersForUni]
+                        ? providersForUni[service.id as keyof typeof providersForUni].length
+                        : 0;
+                      return (
+                        <button
+                          key={uni.id}
+                          onClick={() => { setSelectedUniversity(uni.name); setDropdownOpen(false); }}
+                          className="w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img src={uni.logoUrl} alt={uni.name} className="w-10 h-10 rounded-full object-cover shadow-sm" />
+                            <div>
+                              <div className="font-semibold text-unistay-navy">{uni.name}</div>
+                              <div className="text-xs text-gray-500">{count} provider{count !== 1 ? 's' : ''}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {count > 0 ? (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-unistay-yellow text-unistay-navy">{count}</span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">0</span>
+                            )}
+                            <i className="fas fa-chevron-right text-gray-300"></i>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
