@@ -41,13 +41,15 @@ import {
 } from './services/dbService';
 import { contactService, contactHandler } from './services/contactService';
 
-type AppView = 'main' | 'roommateFinder' | 'roommateMatch' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile' | 'service';
+type AppView = 'main' | 'roommateFinder' | 'roommateMatch' | 'blog' | 'newsArticle' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile' | 'service' | 'spotlight' | 'services';
 
 
 const App = () => {
   // --- Refs ---
   const contactFormRef = useRef<HTMLDivElement>(null);
   const studentDealsRef = useRef<HTMLDivElement>(null);
+  const communityHubRef = useRef<HTMLDivElement>(null);
+  const studentSpotlightRef = useRef<HTMLDivElement>(null);
 
   // --- State Management ---
   const [currentView, setCurrentView] = useState<AppView>('main');
@@ -475,10 +477,21 @@ const App = () => {
   const handleNavigation = (view: AppView) => {
     if (view === 'admin' && isAdmin) {
         setCurrentView('admin');
+    } else if (view === 'spotlight') {
+        // Scroll to spotlight section if on main page, otherwise navigate to main first
+        if (currentView === 'main') {
+            communityHubRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            setCurrentView('main');
+            // Scroll after state update completes
+            setTimeout(() => {
+                communityHubRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
     } else if (view !== 'admin') {
         setCurrentView(view);
+        window.scrollTo(0, 0);
     }
-    window.scrollTo(0, 0);
   };
 
   const handleServiceSelect = (service: any) => {
@@ -525,9 +538,40 @@ const App = () => {
     }
   };
 
+  const handleScrollToSpotlight = () => {
+    if (studentSpotlightRef.current) {
+      studentSpotlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    // If we're not on the main view, navigate there first then scroll after a short delay
+    if (currentView !== 'main') {
+      setCurrentView('main');
+      setTimeout(() => {
+        studentSpotlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  };
+
   const handleScrollToDeals = () => {
     if (studentDealsRef.current) {
       studentDealsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleScrollToServices = () => {
+    // Prefer element by id (Services component sets id="services")
+    const el = document.getElementById('services');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    if (currentView !== 'main') {
+      setCurrentView('main');
+      setTimeout(() => {
+        document.getElementById('services')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
     }
   };
 
@@ -557,6 +601,8 @@ const App = () => {
           notifications={notifications}
           onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
           onScrollToContact={handleScrollToContact}
+          onScrollToSpotlight={handleScrollToSpotlight}
+          onScrollToServices={handleScrollToServices}
         />
 
         <main>
@@ -576,6 +622,7 @@ const App = () => {
                 onToggleSave={handleToggleSaveHostel}
               />
               <CommunityHub
+                ref={communityHubRef}
                 news={news}
                 events={events}
                 jobs={jobs}
@@ -590,6 +637,7 @@ const App = () => {
                 studentSpotlights={studentSpotlights}
                 confessions={confessions}
                 studentDealsRef={studentDealsRef}
+                studentSpotlightRef={studentSpotlightRef}
                 confessionHandler={confessionHandler}
               />
               <Services services={SERVICES} selectedUniversity={selectedUniversity} onServiceSelect={handleServiceSelect} />

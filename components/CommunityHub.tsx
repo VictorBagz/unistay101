@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { NewsItem, Event, Job, University, User, Confession } from '../types';
 import { useScrollObserver } from '../hooks/useScrollObserver';
 import { formatTimeAgo, sortByTimestamp } from '../utils/dateUtils';
@@ -1148,6 +1148,7 @@ interface CommunityHubProps {
   studentSpotlights?: StudentSpotlight[];
   confessions?: Confession[];
   studentDealsRef?: React.RefObject<HTMLDivElement>;
+  studentSpotlightRef?: React.RefObject<HTMLDivElement>;
   confessionHandler?: {
     add: (content: string) => Promise<void>;
     remove: (id: string) => Promise<void>;
@@ -1157,7 +1158,7 @@ interface CommunityHubProps {
   };
 }
 
-const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNavigateToEvents, onNavigateToJobs, user, onNavigate, deals = [], lostItems = [], studentSpotlights = [], confessions = [], studentDealsRef, confessionHandler }: CommunityHubProps) => {
+const CommunityHub = forwardRef<HTMLDivElement, CommunityHubProps>(({ news, events, jobs, universities, onNavigateToBlog, onNavigateToEvents, onNavigateToJobs, user, onNavigate, deals = [], lostItems = [], studentSpotlights = [], confessions = [], studentDealsRef, studentSpotlightRef, confessionHandler }: CommunityHubProps, ref) => {
   const [activeTab, setActiveTab] = useState('News');
   const [sectionRef, isVisible] = useScrollObserver<HTMLElement>();
   const [selectedEvent, setSelectedEvent] = React.useState<Event | null>(null);
@@ -1244,7 +1245,7 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
 
         {/* Student Spotlight Section */}
         {studentSpotlights && studentSpotlights.length > 0 && (
-          <div className={`mt-16 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100' : 'opacity-100'}`}>
+          <div ref={studentSpotlightRef} className={`mt-16 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100' : 'opacity-100'}`}>
             {/* Header with Background Image */}
             <div className="relative -mx-6 -mt-8 mb-10 z-10">
               {/* Background Image with Overlay */}
@@ -1312,6 +1313,8 @@ const CommunityHub = ({ news, events, jobs, universities, onNavigateToBlog, onNa
       )}
     </section>
   );
-};
+});
+
+CommunityHub.displayName = 'CommunityHub';
 
 export default CommunityHub;

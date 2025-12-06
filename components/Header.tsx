@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Notification } from '../types';
 
-type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile';
+type AppView = 'main' | 'roommateFinder' | 'blog' | 'events' | 'jobs' | 'auth' | 'admin' | 'profile' | 'spotlight' | 'services';
 
 const HouseIcon = () => (
     <svg aria-hidden="true" className="inline-block" width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" style={{ transform: 'translateY(-0.05em)'}}>
@@ -146,19 +146,20 @@ interface HeaderProps {
     notifications: Notification[];
     onMarkNotificationsAsRead: () => void;
     onScrollToContact?: () => void;
+    onScrollToSpotlight?: () => void;
+    onScrollToServices?: () => void;
 }
 
-const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notifications, onMarkNotificationsAsRead, onScrollToContact }: HeaderProps) => {
+const Header = ({ onNavigate, currentView, user, isAdmin, onLogout, notifications, onMarkNotificationsAsRead, onScrollToContact, onScrollToSpotlight, onScrollToServices }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const navLinks: { text: string; view?: AppView; action?: () => void }[] = [
-    { text: 'Hostels', view: 'main' },
-    { text: 'Roommates', view: 'roommateFinder' },
-    { text: 'News', view: 'blog' },
-    { text: 'Events', view: 'events' },
-    { text: 'Jobs', view: 'jobs' },
-    { text: 'Contact Us', action: onScrollToContact },
-  ];
+    const navLinks: { text: string; view?: AppView; action?: () => void }[] = [
+        { text: 'Hostels', view: 'main' },
+        { text: 'Roommates', view: 'roommateFinder' },
+        { text: 'Services', action: onScrollToServices },
+        { text: 'Spotlight', action: onScrollToSpotlight },
+        { text: 'Contact Us', action: onScrollToContact },
+    ];
 
   const isActive = (view: AppView) => {
       if(currentView === 'main' && view === 'main') return true;

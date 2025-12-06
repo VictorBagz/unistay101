@@ -31,6 +31,20 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
     return colors[serviceId] || 'from-unistay-navy to-blue-600';
   };
 
+  const getServiceBackgroundImage = (serviceId: string) => {
+    const backgroundImages: Record<string, string> = {
+      food: '/images/services/burger1.webp',
+      transport: '/images/services/boda1.jpg',
+      shopping: '/images/services/shopping4.webp',
+      stationery: '/images/services/stationery1.webp',
+      entertainment: '/images/services/entertainment.avif',
+      internet: '/images/services/wifi5.jpg',
+      health: '/images/services/medicine1.png',
+      laundry: '/images/services/laundry1.jpg',
+    };
+    return backgroundImages[serviceId] || '';
+  };
+
   const getServiceProviders = () => {
     const universityData = SERVICE_PROVIDERS_BY_UNIVERSITY[selectedUniversity as keyof typeof SERVICE_PROVIDERS_BY_UNIVERSITY];
     if (!universityData) return [];
@@ -71,8 +85,13 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero Section */}
-      <div className={`bg-gradient-to-r ${getServiceColor(service.id)} text-white py-12 sticky top-0 z-30 shadow-lg`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div 
+        className="text-white py-12 sticky top-0 z-30 shadow-lg bg-cover bg-center relative"
+        style={{ backgroundImage: `url('${getServiceBackgroundImage(service.id)}')` }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 rounded-full h-16 w-16 flex items-center justify-center backdrop-blur-sm">
               <i className={`${service.icon} text-4xl`}></i>
