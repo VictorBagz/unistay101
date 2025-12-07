@@ -77,10 +77,10 @@ const Footer = ({ onNavigateToRoommateFinder, onNavigateToBlog, onNavigateToAuth
     };
 
     const socialIcons = [
-        { icon: 'fab fa-facebook-f', href: '#', name: 'Facebook' },
-        { icon: 'fab fa-twitter', href: '#', name: 'Twitter' },
-        { icon: 'fab fa-instagram', href: '#', name: 'Instagram' },
-        { icon: 'fab fa-whatsapp', href: '#', name: 'WhatsApp' }
+        { icon: 'fab fa-facebook-f', href: 'https://www.facebook.com/share/1F8wDkxS8r/', name: 'Facebook' },
+        { icon: 'fa-brands fa-x-twitter', href: 'https://x.com/uni_nav1', name: 'Twitter' },
+        { icon: 'fab fa-instagram', href: 'https://www.instagram.com/accounts/login/?next=%2Funistay_navigator%2F&source=omni_redirect', name: 'Instagram' },
+        { icon: 'fab fa-whatsapp', href: 'https://whatsapp.com/channel/0029VbBJkVYLikgDIbagef1J', name: 'WhatsApp' }
     ];
 
     return (
