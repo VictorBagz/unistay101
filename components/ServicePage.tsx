@@ -271,38 +271,6 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
           ))}
         </div>
 
-        {/* Statistics Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 mt-16">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow border border-gray-100">
-            <div className={`w-16 h-16 mx-auto bg-gradient-to-r ${getServiceColor(service.id)} rounded-full flex items-center justify-center mb-4`}>
-              <i className="fas fa-star text-3xl text-white"></i>
-            </div>
-            <p className="text-4xl font-bold text-unistay-navy">4.8/5</p>
-            <p className="text-gray-600 text-sm mt-2">Average Rating</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow border border-gray-100">
-            <div className={`w-16 h-16 mx-auto bg-gradient-to-r ${getServiceColor(service.id)} rounded-full flex items-center justify-center mb-4`}>
-              <i className="fas fa-users text-3xl text-white"></i>
-            </div>
-            <p className="text-4xl font-bold text-unistay-navy">2.5K+</p>
-            <p className="text-gray-600 text-sm mt-2">Happy Students</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow border border-gray-100">
-            <div className={`w-16 h-16 mx-auto bg-gradient-to-r ${getServiceColor(service.id)} rounded-full flex items-center justify-center mb-4`}>
-              <i className="fas fa-store text-3xl text-white"></i>
-            </div>
-            <p className="text-4xl font-bold text-unistay-navy">50+</p>
-            <p className="text-gray-600 text-sm mt-2">Partner Providers</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow border border-gray-100">
-            <div className={`w-16 h-16 mx-auto bg-gradient-to-r ${getServiceColor(service.id)} rounded-full flex items-center justify-center mb-4`}>
-              <i className="fas fa-clock text-3xl text-white"></i>
-            </div>
-            <p className="text-4xl font-bold text-unistay-navy">24/7</p>
-            <p className="text-gray-600 text-sm mt-2">Availability</p>
-          </div>
-        </div>
-
         {/* Quick Action */}
         <div className="bg-gradient-to-r from-unistay-yellow to-yellow-400 rounded-2xl p-8 md:p-12 text-center shadow-lg border border-yellow-200">
           <h2 className="text-3xl font-bold text-unistay-navy mb-4">Need Help Finding a Provider?</h2>
