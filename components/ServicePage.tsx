@@ -110,7 +110,7 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
             </div>
             <div>
               <h1 className="text-4xl font-bold">{service.name} Services</h1>
-              <p className="text-white/90 mt-1">Trusted providers at {university.name}</p>
+              <p className="text-white/90 mt-1">Trusted providers at {selectedUniversity}</p>
             </div>
           </div>
           <button
@@ -188,87 +188,77 @@ const ServicePage = ({ service, university, onNavigateHome }: ServicePageProps) 
 
         <div className="mb-10">
           <h2 className="text-4xl font-bold text-unistay-navy mb-3">Featured Providers</h2>
-          <p className="text-gray-600 text-lg">Choose from verified and trusted service providers near {university.name}</p>
+          <p className="text-gray-600 text-lg">Choose from verified and trusted service providers near {selectedUniversity}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {getServiceProviders().map((provider) => (
-            <div key={provider.id} className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-              {/* Provider Logo Section */}
-              <div className={`bg-gradient-to-br ${getServiceColor(service.id)} h-40 flex items-center justify-center relative overflow-hidden`}>
-                <div className="absolute inset-0 opacity-10 flex items-center justify-center text-9xl">{provider.icon}</div>
-                <img 
-                  src={getProviderLogoUrl(provider.name)} 
-                  alt={provider.name}
-                  className="h-24 w-24 object-contain z-10 drop-shadow-lg"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Provider Info */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-bold text-2xl text-unistay-navy flex-1">{provider.name}</h3>
-                  <div className="flex items-center gap-1 bg-yellow-100 text-unistay-navy px-3 py-1 rounded-full flex-shrink-0 ml-2">
-                    <i className="fas fa-star text-unistay-yellow text-sm"></i>
-                    <span className="font-bold text-sm">{provider.rating}</span>
-                  </div>
+          {getServiceProviders().length > 0 ? (
+            getServiceProviders().map((provider, index) => (
+              <div key={provider.id} className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                {/* Provider Logo Section */}
+                <div className={`bg-gradient-to-br ${getServiceColor(service.id)} h-40 flex items-center justify-center relative overflow-hidden`}>
+                  <div className="absolute inset-0 opacity-10 flex items-center justify-center text-9xl">{provider.icon}</div>
+                  <img 
+                    src={getProviderLogoUrl(provider.name)} 
+                    alt={provider.name}
+                    className="h-24 w-24 object-contain z-10 drop-shadow-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 </div>
 
-                <p className="text-gray-600 text-sm mb-6 line-clamp-2">{provider.description}</p>
-
-                {/* Details */}
-                <div className="space-y-4 mb-6 pb-6 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
-                      <i className="fas fa-phone text-unistay-yellow text-lg"></i>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 font-semibold">CONTACT</p>
-                      <p className="text-sm font-bold text-unistay-navy truncate">{provider.contact}</p>
+                {/* Provider Info */}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-bold text-2xl text-unistay-navy flex-1">{provider.name}</h3>
+                    <div className="flex items-center gap-1 bg-yellow-100 text-unistay-navy px-3 py-1 rounded-full flex-shrink-0 ml-2">
+                      <i className="fas fa-star text-unistay-yellow text-sm"></i>
+                      <span className="font-bold text-sm">{provider.rating}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
-                      <i className="fas fa-clock text-unistay-yellow text-lg"></i>
+                  <p className="text-gray-600 text-sm mb-6 line-clamp-2">{provider.description}</p>
+
+                  {/* Details */}
+                  <div className="space-y-4 mb-6 pb-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
+                        <i className="fas fa-clock text-unistay-yellow text-lg"></i>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 font-semibold">AVAILABILITY</p>
+                        <p className="text-sm font-bold text-unistay-navy">{provider.availability}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 font-semibold">AVAILABILITY</p>
-                      <p className="text-sm font-bold text-unistay-navy">{provider.availability}</p>
+
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
+                        <i className="fas fa-map-marker-alt text-unistay-yellow text-lg"></i>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 font-semibold">LOCATION</p>
+                        <p className="text-sm font-bold text-unistay-navy">{provider.location}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
-                      <i className="fas fa-comments text-unistay-yellow text-lg"></i>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 font-semibold">REVIEWS</p>
-                      <p className="text-sm font-bold text-unistay-navy">{provider.reviews.toLocaleString()}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yellow-100 rounded-full p-3 w-12 h-12 flex items-center justify-center flex-shrink-0">
-                      <i className="fas fa-map-marker-alt text-unistay-yellow text-lg"></i>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 font-semibold">LOCATION</p>
-                      <p className="text-sm font-bold text-unistay-navy">{provider.location}</p>
-                    </div>
-                  </div>
+                  <button className="w-full bg-gradient-to-r from-unistay-navy to-blue-700 text-white py-3 rounded-lg font-bold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
+                    <i className="fas fa-shopping-bag"></i>
+                    Order Now
+                  </button>
                 </div>
-
-                <button className="w-full bg-gradient-to-r from-unistay-navy to-blue-700 text-white py-3 rounded-lg font-bold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                  <i className="fas fa-phone-alt"></i>
-                  Contact Provider
-                </button>
               </div>
+            ))
+          ) : (
+            <div className="col-span-full bg-white rounded-2xl shadow-md p-12 text-center border border-gray-100">
+              <div className="inline-block bg-gray-100 rounded-full p-6 mb-4">
+                <i className="fas fa-search text-4xl text-gray-400"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-unistay-navy mb-2">No Providers Available</h3>
+              <p className="text-gray-600 text-lg">Unfortunately, there are no service providers available for {service.name} at {selectedUniversity} at this time.</p>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Quick Action */}

@@ -34,6 +34,61 @@ export const SERVICE_PROVIDERS_BY_UNIVERSITY = {
         availability: '7am - 11pm',
         icon: '🥗',
         location: 'On Campus'
+      },
+      {
+        id: 'food-mak-4',
+        name: 'The Grill House',
+        description: 'Premium grilled meats and BBQ specialties',
+        rating: 4.7,
+        reviews: 2100,
+        contact: '+256 701 234 567',
+        availability: '11am - 10pm',
+        icon: '🔥',
+        location: 'Near Campus'
+      },
+      {
+        id: 'food-mak-5',
+        name: 'Pasta Paradise',
+        description: 'Italian restaurant with authentic pasta and pizza',
+        rating: 4.6,
+        reviews: 1650,
+        contact: '+256 702 345 678',
+        availability: '10am - 11pm',
+        icon: '🍝',
+        location: 'Walking Distance'
+      },
+      {
+        id: 'food-mak-6',
+        name: 'Asian Fusion Kitchen',
+        description: 'Thai, Chinese and Vietnamese cuisine',
+        rating: 4.5,
+        reviews: 1340,
+        contact: '+256 703 456 789',
+        availability: '12pm - 10pm',
+        icon: '🥢',
+        location: 'Kampala'
+      },
+      {
+        id: 'food-mak-7',
+        name: 'Fresh Juice Bar',
+        description: 'Freshly made juices, smoothies and healthy wraps',
+        rating: 4.8,
+        reviews: 2560,
+        contact: '+256 704 567 890',
+        availability: '7am - 8pm',
+        icon: '🧃',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-mak-8',
+        name: 'Street Eats Uganda',
+        description: 'Traditional Ugandan cuisine with modern twist',
+        rating: 4.4,
+        reviews: 1890,
+        contact: '+256 705 678 901',
+        availability: '8am - 9pm',
+        icon: '🍲',
+        location: 'Near Campus'
       }
     ],
     transport: [
@@ -316,6 +371,61 @@ export const SERVICE_PROVIDERS_BY_UNIVERSITY = {
         availability: '7am - 11pm',
         icon: '🥗',
         location: 'On Campus'
+      },
+      {
+        id: 'food-kiu-4',
+        name: 'KIU Cafeteria Plus',
+        description: 'Affordable daily meals with vegetarian options',
+        rating: 4.3,
+        reviews: 1560,
+        contact: '+256 701 111 222',
+        availability: '6am - 10pm',
+        icon: '🍛',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-kiu-5',
+        name: 'Spice Route Restaurant',
+        description: 'Indian curries and authentic spiced dishes',
+        rating: 4.6,
+        reviews: 1890,
+        contact: '+256 702 222 333',
+        availability: '11am - 10pm',
+        icon: '🌶️',
+        location: 'Kampala'
+      },
+      {
+        id: 'food-kiu-6',
+        name: 'Quick Bites Kiosk',
+        description: 'Sandwiches, burgers and quick snacks',
+        rating: 4.2,
+        reviews: 1200,
+        contact: '+256 703 222 333',
+        availability: '8am - 8pm',
+        icon: '🥪',
+        location: 'Near Campus'
+      },
+      {
+        id: 'food-kiu-7',
+        name: 'Vegetarian Haven',
+        description: 'Plant-based meals and vegan options',
+        rating: 4.7,
+        reviews: 980,
+        contact: '+256 704 222 333',
+        availability: '10am - 9pm',
+        icon: '🥕',
+        location: 'Walking Distance'
+      },
+      {
+        id: 'food-kiu-8',
+        name: 'Night Owl Diner',
+        description: 'Late-night comfort food and breakfast all day',
+        rating: 4.5,
+        reviews: 1450,
+        contact: '+256 705 222 333',
+        availability: '10pm - 5am',
+        icon: '🌙',
+        location: 'Near Campus'
       }
     ],
     transport: [
@@ -597,6 +707,61 @@ export const SERVICE_PROVIDERS_BY_UNIVERSITY = {
         contact: '+256 700 666 777',
         availability: '7am - 11pm',
         icon: '🥗',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-ucu-4',
+        name: 'Central Dining Hall',
+        description: 'Buffet-style dining with variety of cuisines',
+        rating: 4.4,
+        reviews: 1670,
+        contact: '+256 701 666 777',
+        availability: '6am - 9pm',
+        icon: '🍽️',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-ucu-5',
+        name: 'Garden Cafe',
+        description: 'Organic and locally sourced fresh meals',
+        rating: 4.8,
+        reviews: 1340,
+        contact: '+256 702 666 777',
+        availability: '8am - 8pm',
+        icon: '🥬',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-ucu-6',
+        name: 'Sweet Treats Bakery',
+        description: 'Pastries, cakes and baked goods',
+        rating: 4.6,
+        reviews: 1560,
+        contact: '+256 703 666 777',
+        availability: '7am - 7pm',
+        icon: '🍰',
+        location: 'Walking Distance'
+      },
+      {
+        id: 'food-ucu-7',
+        name: 'Mukono Chop House',
+        description: 'Local favorites and traditional dishes',
+        rating: 4.3,
+        reviews: 1200,
+        contact: '+256 704 666 777',
+        availability: '10am - 10pm',
+        icon: '🍗',
+        location: 'Near Campus'
+      },
+      {
+        id: 'food-ucu-8',
+        name: 'Coffee & Cowork',
+        description: 'Premium coffee and light meals with WiFi',
+        rating: 4.7,
+        reviews: 1450,
+        contact: '+256 705 666 777',
+        availability: '7am - 9pm',
+        icon: '☕',
         location: 'On Campus'
       }
     ],
@@ -880,6 +1045,61 @@ export const SERVICE_PROVIDERS_BY_UNIVERSITY = {
         availability: '6am - 11pm',
         icon: '☕',
         location: 'On Campus'
+      },
+      {
+        id: 'food-mubs-4',
+        name: 'The Executive Lounge',
+        description: 'Premium business meals and corporate catering',
+        rating: 4.8,
+        reviews: 1890,
+        contact: '+256 702 555 666',
+        availability: '10am - 10pm',
+        icon: '💼',
+        location: 'Nakawa'
+      },
+      {
+        id: 'food-mubs-5',
+        name: 'Healthy Bowls Cafe',
+        description: 'Organic bowls, wraps and smoothie bowls',
+        rating: 4.6,
+        reviews: 1560,
+        contact: '+256 703 555 666',
+        availability: '7am - 8pm',
+        icon: '🥗',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-mubs-6',
+        name: 'Nakawa Night Market',
+        description: 'Street food and late-night dining',
+        rating: 4.3,
+        reviews: 1340,
+        contact: '+256 704 555 666',
+        availability: '5pm - 2am',
+        icon: '🌮',
+        location: 'Nakawa'
+      },
+      {
+        id: 'food-mubs-7',
+        name: 'Business Lunch Club',
+        description: 'Meal subscriptions and meal prep service',
+        rating: 4.7,
+        reviews: 1670,
+        contact: '+256 705 555 666',
+        availability: '24/7 delivery',
+        icon: '📦',
+        location: 'Campus Delivery'
+      },
+      {
+        id: 'food-mubs-8',
+        name: 'Asian Wok Express',
+        description: 'Quick Asian noodles and stir-fry',
+        rating: 4.5,
+        reviews: 1450,
+        contact: '+256 706 555 666',
+        availability: '11am - 10pm',
+        icon: '🍜',
+        location: 'Near Campus'
       }
     ],
     transport: [
@@ -1162,6 +1382,61 @@ export const SERVICE_PROVIDERS_BY_UNIVERSITY = {
         availability: '7am - 9pm',
         icon: '🥘',
         location: 'Near Campus'
+      },
+      {
+        id: 'food-kyambogo-4',
+        name: 'Kamwokya Grill',
+        description: 'Grilled proteins and BBQ skewers',
+        rating: 4.6,
+        reviews: 1340,
+        contact: '+256 702 777 888',
+        availability: '11am - 11pm',
+        icon: '🔥',
+        location: 'Kamwokya'
+      },
+      {
+        id: 'food-kyambogo-5',
+        name: 'Student Canteen',
+        description: 'Budget-friendly daily meals for students',
+        rating: 4.2,
+        reviews: 1670,
+        contact: '+256 703 777 888',
+        availability: '6am - 8pm',
+        icon: '🍚',
+        location: 'On Campus'
+      },
+      {
+        id: 'food-kyambogo-6',
+        name: 'Sushi Dreams',
+        description: 'Japanese sushi and sashimi specialties',
+        rating: 4.7,
+        reviews: 1200,
+        contact: '+256 704 777 888',
+        availability: '12pm - 10pm',
+        icon: '🍣',
+        location: 'Kampala'
+      },
+      {
+        id: 'food-kyambogo-7',
+        name: 'Smoothie Bar',
+        description: 'Healthy smoothies and acai bowls',
+        rating: 4.8,
+        reviews: 1450,
+        contact: '+256 705 777 888',
+        availability: '7am - 7pm',
+        icon: '🧋',
+        location: 'Near Campus'
+      },
+      {
+        id: 'food-kyambogo-8',
+        name: 'Kebab House',
+        description: 'Turkish kebabs and Mediterranean wraps',
+        rating: 4.5,
+        reviews: 1100,
+        contact: '+256 706 777 888',
+        availability: '10am - 11pm',
+        icon: '🌯',
+        location: 'Kampala'
       }
     ],
     transport: [

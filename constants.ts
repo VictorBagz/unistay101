@@ -93,12 +93,12 @@ export const ROOMMATE_PROFILES: RoommateProfile[] = [
 
 // Core feature constants
 export const UNIVERSITIES: University[] = [
-  { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Makerere', logoUrl: '/images/hostels/makerere.jpg' },
-  { id: '123e4567-e89b-12d3-a456-426614174002', name: 'Kyambogo', logoUrl: '/images/hostels/kyambogo.jpg' },
-  { id: '123e4567-e89b-12d3-a456-426614174003', name: 'MUBS', logoUrl: '/images/hostels/mubs.jpg' },
-  { id: '123e4567-e89b-12d3-a456-426614174004', name: 'UCU', logoUrl: '/images/hostels/ucu.png' },
+  { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Makerere University', logoUrl: '/images/hostels/makerere.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174002', name: 'Kyambogo University', logoUrl: '/images/hostels/kyambogo.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174003', name: 'Makerere University Business School', logoUrl: '/images/hostels/mubs.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174004', name: 'Uganda Christian University', logoUrl: '/images/hostels/ucu.png' },
   { id: '123e4567-e89b-12d3-a456-426614174005', name: 'UMU Nkozi', logoUrl: '/images/hostels/umu.png' },
-  { id: '123e4567-e89b-12d3-a456-426614174006', name: 'KIU', logoUrl: '/images/hostels/kiu.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174006', name: 'Kampala International University', logoUrl: '/images/hostels/kiu.jpg' },
   { id: '123e4567-e89b-12d3-a456-426614174007', name: 'MUST', logoUrl: '/images/hostels/must.jpg' },
   { id: '123e4567-e89b-12d3-a456-426614174008', name: 'Aga Khan', logoUrl: '/images/hostels/agaKhan.jpg' },
   { id: '123e4567-e89b-12d3-a456-426614174009', name: 'Gulu', logoUrl: '/images/hostels/gulu.png' },

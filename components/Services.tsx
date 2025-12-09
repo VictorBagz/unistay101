@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Service, University } from '../types';
+import { SERVICE_PROVIDERS_BY_UNIVERSITY } from '../constants/serviceProviders';
+import { UNIVERSITIES } from '../constants';
 import { fetchServiceGuide } from '../services/geminiService';
 import { useScrollObserver } from '../hooks/useScrollObserver';
 import Spinner from './Spinner';
@@ -84,6 +86,11 @@ interface ServicesProps {
 
 const Services = ({ services, selectedUniversity, onServiceSelect }: ServicesProps) => {
   const [sectionRef, isVisible] = useScrollObserver<HTMLElement>();
+  const [displayedUniversity, setDisplayedUniversity] = useState<University>(selectedUniversity);
+  
+  useEffect(() => {
+    setDisplayedUniversity(selectedUniversity);
+  }, [selectedUniversity]);
   
   const handleSelectService = (service: Service) => {
     if (onServiceSelect) {
@@ -91,28 +98,42 @@ const Services = ({ services, selectedUniversity, onServiceSelect }: ServicesPro
     }
   };
 
+  const getProviderCountForService = (service: Service): number => {
+    const universityData = SERVICE_PROVIDERS_BY_UNIVERSITY[displayedUniversity.name as keyof typeof SERVICE_PROVIDERS_BY_UNIVERSITY];
+    if (!universityData) return 0;
+    const providers = universityData[service.id as keyof typeof universityData] || [];
+    return providers.length;
+  };
+
   return (
     <section ref={sectionRef} id="services" className="py-16 bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`text-center mb-12 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
           <h2 className="text-3xl font-bold text-unistay-navy sm:text-4xl">Student Life Services</h2>
-          <p className="mt-4 text-lg text-gray-600">Everything you need for a comfortable and productive campus life, right at your fingertips.</p>
+          <p className="mt-4 text-lg text-gray-600">Everything you need for a comfortable and productive campus life at {displayedUniversity.name}, right at your fingertips.</p>
         </div>
 
         <div className="relative min-h-[400px]">
           {/* Grid View */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {services.map((service, index) => (
-              // FIX: Wrap ServiceCard in a div and add the key here to satisfy React's requirement for keys on list items.
-              <div key={service.id}>
-                <ServiceCard
-                  service={service} 
-                  onClick={() => handleSelectService(service)}
-                  index={index}
-                  isVisible={isVisible}
-                />
-              </div>
-            ))}
+            {services.map((service, index) => {
+              const providerCount = getProviderCountForService(service);
+              return (
+                <div key={service.id} className="relative">
+                  <ServiceCard
+                    service={service} 
+                    onClick={() => handleSelectService(service)}
+                    index={index}
+                    isVisible={isVisible}
+                  />
+                  {providerCount > 0 && (
+                    <div className="absolute top-2 right-2 bg-unistay-yellow text-unistay-navy px-2 py-1 rounded-full text-xs font-bold">
+                      {providerCount}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
