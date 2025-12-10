@@ -2172,9 +2172,9 @@ const AdminDashboard = ({ onExitAdminMode, content, onDataChange }: AdminDashboa
         Events: {
             title: 'Manage Events',
             items: [...content.events.items].sort((a, b) => {
-                // Sort by timestamp if available, otherwise by date
-                const aTime = new Date(a.timestamp || a.date || 0).getTime();
-                const bTime = new Date(b.timestamp || b.date || 0).getTime();
+                // Sort by date
+                const aTime = new Date(a.date || 0).getTime();
+                const bTime = new Date(b.date || 0).getTime();
                 return bTime - aTime; // Latest first
             }),
             handler: content.events.handler,

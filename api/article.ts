@@ -1,4 +1,4 @@
-// Create this file at: /api/article.ts
+
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 

@@ -2,7 +2,7 @@
   "name": "UniStay",
   "short_name": "UniStay",
   "description": "Your Ultimate Student Housing Platform",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#001F3F",

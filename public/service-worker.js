@@ -1,10 +1,10 @@
 // This is the service worker script
 const CACHE_NAME = 'unistay-cache-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
+  './',
+  './index.html',
+  './manifest.json',
+  './favicon.ico',
   // Add other static assets here
 ];
 
