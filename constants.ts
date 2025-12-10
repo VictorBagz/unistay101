@@ -104,6 +104,7 @@ export const UNIVERSITIES: University[] = [
   { id: '123e4567-e89b-12d3-a456-426614174009', name: 'Gulu', logoUrl: '/images/hostels/gulu.png' },
   { id: '123e4567-e89b-12d3-a456-426614174010', name: 'Lira', logoUrl: '/images/hostels/lira.png' },
   { id: '123e4567-e89b-12d3-a456-426614174011', name: 'IUEA', logoUrl: '/images/hostels/iuea.jpg' },
+  { id: '123e4567-e89b-12d3-a456-426614174012', name: 'Soroti University', logoUrl: '/images/hostels/soroti.png' },
 ];
 
 export const SERVICES: Service[] = [
